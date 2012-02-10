@@ -50,4 +50,5 @@ void on_button_knot (GtkWidget * widget, gpointer Data);
 
 void on_menu_inter (GtkWidget * widget, gpointer Data);
 void on_button_inter (GtkWidget * widget, gpointer Data);
+gint drawelem_motion_notify_event(GtkWidget *widget, GdkEventMotion *event);
 #endif

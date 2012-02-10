@@ -44,10 +44,12 @@ void drawelem_load_all (DrawElem * det, char *path);
 void drawelem_save (DrawElem * det, char *path);
 void drawelem_loadpal (DrawElem * det, char *path);
 void drawelem_set (int s);
+int  drawelem_get ();
 void drawelem_load_nds (DrawElem * det, char *path);
 void drawelem_show_nelem (void);
 void drawelem_show_nknot (void);
 void draw_nknot (DrawElem * det);
 void draw_nelem (DrawElem * det);
 void drawelem_inter (void);
+float drawelem_get_nds(DrawElem * det,int x,int y);
 #endif

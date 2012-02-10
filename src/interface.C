@@ -6,7 +6,9 @@ GtkWidget *create_main_window (void)
 {
     GtkWidget *main_window;
     GtkWidget *main_vbox;
+    GtkWidget *main_hbox;
     GtkWidget *main_statusbar;
+    GtkWidget *main_statusbar_nds;
 
     GtkWidget *menubar;
     GtkWidget *item_menu;
@@ -48,14 +50,30 @@ GtkWidget *create_main_window (void)
     main_vbox = gtk_vbox_new (FALSE, 0);
     gtk_container_add (GTK_CONTAINER (main_window), main_vbox);
     gtk_widget_show (main_vbox);
+    
+    main_hbox = gtk_hbox_new (FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (main_vbox), main_hbox, FALSE, FALSE,
+		      0);
+    gtk_widget_show (main_hbox);
 
+    
+    
+    main_statusbar_nds = gtk_statusbar_new ();
+    gtk_object_set_data (GTK_OBJECT (main_window), "statusbar_nds",
+			 main_statusbar_nds);
+    gtk_box_pack_end (GTK_BOX (main_hbox), main_statusbar_nds, FALSE, FALSE,
+		      0);
+    gtk_statusbar_push (GTK_STATUSBAR (main_statusbar_nds), 1,
+			_(" НДС: не обнаружено "));
+    gtk_widget_show (main_statusbar_nds);
+    
     main_statusbar = gtk_statusbar_new ();
     gtk_object_set_data (GTK_OBJECT (main_window), "statusbar",
 			 main_statusbar);
-    gtk_box_pack_end (GTK_BOX (main_vbox), main_statusbar, FALSE, FALSE,
+    gtk_box_pack_end (GTK_BOX (main_hbox), main_statusbar, TRUE, TRUE,
 		      0);
     gtk_statusbar_push (GTK_STATUSBAR (main_statusbar), 1,
-			_("Добро пожаловать в Graph2D"));
+			_(" Добро пожаловать в Graph2D"));
     gtk_widget_show (main_statusbar);
 
     menu_handlebox = gtk_handle_box_new ();
@@ -478,6 +496,13 @@ GtkWidget *create_main_window (void)
 
     drawelem = drawelem_new ();
     gtk_object_set_data (GTK_OBJECT (main_window), "drawelem", drawelem);
+    gtk_signal_connect (GTK_OBJECT (drawelem), "motion_notify_event",
+                              (GtkSignalFunc) drawelem_motion_notify_event, NULL);
+    gtk_widget_set_events (GTK_WIDGET(drawelem), GDK_EXPOSURE_MASK
+			 | GDK_LEAVE_NOTIFY_MASK
+			 | GDK_BUTTON_PRESS_MASK
+			 | GDK_POINTER_MOTION_MASK
+			 | GDK_POINTER_MOTION_HINT_MASK);
     gtk_table_attach (GTK_TABLE (table), drawelem, 0, 1, 0, 1,
 		      (GtkAttachOptions) (GTK_EXPAND),
 		      (GtkAttachOptions) (GTK_EXPAND), 0, 0);

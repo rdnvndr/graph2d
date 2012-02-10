@@ -1,5 +1,7 @@
 #include "callback.h"
 #include "intl.h"
+#include "drawelem.h"
+#include <stdlib.h>
 static char *dirname = NULL;
 
 char *savename = "";
@@ -621,3 +623,38 @@ void on_button_inter (GtkWidget * widget, gpointer Data)
     }
 }
 
+gint drawelem_motion_notify_event(GtkWidget *widget, GdkEventMotion *event)
+{
+   int x, y;
+   GdkModifierType state;
+   float result_nds;
+   char txt[10] = "";
+   char txt1[17] = " НДС: ";
+  
+   GtkWidget *draw;
+   GtkWidget *status_bar_nds;
+
+   if (event->is_hint)
+      gdk_window_get_pointer (event->window, &x, &y, &state);
+  
+  
+
+   status_bar_nds = lookup_widget (widget, "statusbar_nds");
+   draw = lookup_widget (widget, "drawelem");
+  
+   if (drawelem_get()>0)
+   {
+      result_nds = drawelem_get_nds(DRAWELEM(draw),x,y);
+      
+      gcvt (double ((int) (result_nds*10000))/10000, 10, txt);
+      strcat(txt1,txt);
+      gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1,
+      txt1);
+   }
+   else
+   {
+     gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1,
+			_(" НДС: не обнаружено "));
+   }
+   return TRUE;
+}

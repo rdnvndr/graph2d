@@ -45,6 +45,11 @@ void drawelem_set (int s)
     sdn = s;
 }
 
+int drawelem_get()
+{
+    return (sdn) ;
+}
+
 float area_triangle (float x1, float y1, float x2, float y2, float x3,
 		     float y3)
 {
@@ -589,6 +594,46 @@ void drawelem_fit (DrawElem * det)
 			TRUE, 0, 0, width, height);
 
     drawelem_show_elem (det);
+}
+
+float drawelem_get_nds(DrawElem * det,int x,int y)
+{
+  int i,l,m,n; 
+  float nd=0;
+  float kx[3];           
+  
+  x = x-det->zero_x;
+  y = -(y-det->zero_y);
+  
+  for (i = 0; i < det->nelem; i++) 
+   if (drawelem_xy_in_elem (det, i, x, y) < 0.3) 
+    if (sinter == 1)
+    {
+        for (l = 0; l < 3; l++) 
+        {
+	    m = l + 1;
+	    n = m + 1;
+	    if (m > 2)
+		m = m - 3;
+	    if (n > 2)
+		n = n - 3;
+
+	    kx[l] = koef (x, y,(det->knot_x[det->elem[l][i] -1] * det->mash),
+			       (det->knot_y[det->elem[l][i] -1] * det->mash),
+			       (det->knot_x[det->elem[m][i] -1] * det->mash),
+			       (det->knot_y[det->elem[m][i] -1] * det->mash),
+			       (det->knot_x[det->elem[n][i] -1] * det->mash),
+			       (det->knot_y[det->elem[n][i] -1] * det->mash));
+        }
+
+        nd = 0;
+	for (l = 0; l < 3; l++)
+	    nd =nd +kx[l] * nds_knot[det->elem[l][i] - 1];
+    }
+    else
+      nd=det->nds[i];
+    
+    return(nd);
 }
 
 void load_knot (DrawElem * det, char *path)
