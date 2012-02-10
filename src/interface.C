@@ -491,30 +491,35 @@ GtkWidget *create_about_dialog (void)
 {
     GtkWidget *about_dialog;
     GtkWidget *about_vbox;
-    GtkWidget *about_button;
-    GtkWidget *about_action_area;
+    GtkWidget *about_hbox;
+    GtkWidget *about_label;
+    
     GtkWidget *about_frame;
-    GtkWidget *about_label1;
-    GtkWidget *about_label2;
-
     GtkWidget *about_pixmapwid;
     GdkBitmap *mask;
     GdkPixmap *about_pixmap;
     GtkStyle *style;
 
-    about_dialog = gtk_dialog_new ();
+    about_dialog = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title (GTK_WINDOW (about_dialog), _("О Программе"));
-    gtk_widget_set_usize (GTK_WIDGET (about_dialog), 300, 200);
+    gtk_widget_set_usize (GTK_WIDGET (about_dialog), 240, 140);
     gtk_window_set_policy (GTK_WINDOW (about_dialog), FALSE, FALSE, FALSE);
     gtk_widget_show (about_dialog);
 
-    about_vbox = GTK_DIALOG (about_dialog)->vbox;
-    gtk_container_set_border_width (GTK_CONTAINER (about_vbox), 0);
-    gtk_widget_show (about_vbox);
-
     about_frame = gtk_frame_new (NULL);
-    gtk_container_set_border_width (GTK_CONTAINER (about_frame), 10);
-    gtk_box_pack_start (GTK_BOX (about_vbox), about_frame, TRUE, TRUE, 0);
+    gtk_container_set_border_width (GTK_CONTAINER (about_frame), 3);
+    gtk_container_add (GTK_CONTAINER (about_dialog), about_frame);
+    gtk_widget_show (about_frame);
+    
+    about_hbox = gtk_hbox_new (FALSE, 0);
+    gtk_container_set_border_width (GTK_CONTAINER (about_hbox), 5);
+    gtk_container_add (GTK_CONTAINER (about_frame), about_hbox);
+    gtk_widget_show (about_hbox);
+    
+    about_frame = gtk_frame_new (NULL);
+    gtk_container_set_border_width (GTK_CONTAINER (about_frame), 0);
+    gtk_box_pack_start (GTK_BOX (about_hbox),about_frame, FALSE,FALSE, 0);
+    gtk_frame_set_shadow_type (GTK_FRAME (about_frame), GTK_SHADOW_IN);
     gtk_widget_show (about_frame);
 
     style = gtk_widget_get_style (about_dialog);
@@ -526,19 +531,22 @@ GtkWidget *create_about_dialog (void)
     gtk_widget_show (about_pixmapwid);
     gtk_container_add (GTK_CONTAINER (about_frame), about_pixmapwid);
     gtk_widget_show (about_pixmapwid);
-
-    about_action_area = GTK_DIALOG (about_dialog)->action_area;
-    gtk_widget_show (about_action_area);
-    gtk_container_set_border_width (GTK_CONTAINER (about_action_area), 5);
-
-    about_button = gtk_button_new_with_label (_("  OK  "));
-    gtk_box_pack_end (GTK_BOX (about_action_area), about_button, FALSE,
-		      FALSE, 0);
-    GTK_WIDGET_SET_FLAGS (about_button, GTK_CAN_DEFAULT);
-    gtk_signal_connect (GTK_OBJECT (about_button), "clicked",
-			GTK_SIGNAL_FUNC (on_about_ok), NULL);
-    gtk_widget_grab_default (about_button);
-    gtk_widget_show (about_button);
+    
+    about_vbox = gtk_vbox_new (FALSE, 0);
+    gtk_box_pack_start (GTK_BOX(about_hbox), about_vbox, FALSE, FALSE, 10);
+    gtk_widget_show (about_vbox);
+    
+    about_pixmap =
+	gdk_pixmap_create_from_xpm_d (about_dialog->window, &mask,
+				      &style->bg[GTK_STATE_NORMAL],
+				      (gchar **) logo_xpm);
+    about_pixmapwid = gtk_pixmap_new (about_pixmap, mask);
+    gtk_box_pack_start (GTK_BOX(about_vbox),about_pixmapwid, FALSE, FALSE, 0);
+    gtk_widget_show (about_pixmapwid);
+    
+    about_label = gtk_label_new (_("Version 0.3.6\n\nCopyright (c) 2001 by\nRodionov Andrey\nAll rights reserved."));
+    gtk_box_pack_start (GTK_BOX(about_vbox), about_label, FALSE, FALSE, 0);
+    gtk_widget_show (about_label);
 
     return (about_dialog);
 }
@@ -548,8 +556,6 @@ GtkWidget *create_open_dialog (void)
     GtkWidget *open_dialog;
     GtkWidget *ok_button;
     GtkWidget *cancel_button;
-    
-    
 
     open_dialog = gtk_file_selection_new (_("Открытие"));
     gtk_container_set_border_width (GTK_CONTAINER (open_dialog), 10);

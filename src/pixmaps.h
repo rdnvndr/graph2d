@@ -1,6 +1,7 @@
 #ifndef PIXMAPS
 #define PIXMAPS
   #include "../pixmaps/about.xpm"
+  #include "../pixmaps/logo.xpm"
   #include "../pixmaps/open.xpm"
   #include "../pixmaps/save.xpm"
   #include "../pixmaps/pal.xpm"
@@ -13,4 +14,5 @@
   #include "../pixmaps/sigma.xpm"
   #include "../pixmaps/trech.xpm"
   #include "../pixmaps/inter.xpm"
+  
 #endif
