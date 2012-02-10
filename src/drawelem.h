@@ -26,6 +26,10 @@ struct _DrawElem {
     int nknot;
     int zero_x, zero_y;
     int mash;
+    char *knot_font;
+    char *elem_font;
+    GdkGC *knot_color;
+    GdkGC *elem_color;
 };
 
 struct _DrawElemClass {
@@ -52,4 +56,15 @@ void draw_nknot (DrawElem * det);
 void draw_nelem (DrawElem * det);
 void drawelem_inter (void);
 float drawelem_get_nds(DrawElem * det,int x,int y);
+
+void drawelem_set_font_elem (DrawElem * det,char *fontname);
+char* drawelem_get_font_elem (DrawElem * det);
+void drawelem_set_font_knot (DrawElem * det,char *fontname);
+char* drawelem_get_font_knot (DrawElem * det);
+
+void drawelem_set_color_elem (DrawElem * det,GdkGC *color);
+GdkGC* drawelem_get_color_elem (DrawElem * det);
+void drawelem_set_color_knot (DrawElem * det,GdkGC *color);
+GdkGC* drawelem_get_color_knot (DrawElem * det);
+
 #endif

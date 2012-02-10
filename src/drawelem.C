@@ -45,9 +45,9 @@ void drawelem_set (int s)
     sdn = s;
 }
 
-int drawelem_get()
+int drawelem_get ()
 {
-    return (sdn) ;
+    return (sdn);
 }
 
 float area_triangle (float x1, float y1, float x2, float y2, float x3,
@@ -117,10 +117,10 @@ static gint configure_event (GtkWidget * widget, GdkEventConfigure * event)
 	if (DRAWELEM (widget)->pixmap != NULL)
 	    gdk_pixmap_unref (DRAWELEM (widget)->pixmap);
 	DRAWELEM (widget)->pixmap = gdk_pixmap_new (widget->window,
-						    widget->allocation.
-						    width,
-						    widget->allocation.
-						    height, -1);
+						    widget->
+						    allocation.width,
+						    widget->
+						    allocation.height, -1);
 
 	gdk_draw_rectangle (DRAWELEM (widget)->pixmap,
 			    widget->style->white_gc,
@@ -181,46 +181,34 @@ GdkGC *color_to_gc (GtkWidget * widget, GdkColor * fcolor,
 
 void draw_nknot (DrawElem * det)
 {
-    GdkFont *font =
-	gdk_font_load
-	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
-
-    GdkGC *colorgc;
-    GdkColor color = { 0, 0, 0, 65535 };
+    GdkFont *font ;
+    
     char txt[10] = "";
     int i;
 
-
-    colorgc = color_to_gc (GTK_WIDGET (det), &color, colormap);
-
-
+    font = gdk_font_load(det->knot_font);
+    
     for (i = 0; i < det->nknot; i++) {
 	gcvt (int (i + 1), 10, txt);
 	gdk_draw_text (DRAWELEM (det)->pixmap,
 		       font,
-		       colorgc,
+		       det->knot_color,
 		       int (det->mash * det->knot_x[i]) + det->zero_x + 2,
 		       -int (det->mash * det->knot_y[i]) + det->zero_y - 2,
 		       txt, 10);
     }
 
-    gdk_gc_unref (colorgc);
     gdk_font_unref (font);
 }
 
 void draw_nelem (DrawElem * det)
 {
-    GdkFont *font =
-	gdk_font_load
-	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
-    GdkGC *colorgc;
-    GdkColor color = { 0, 65535, 0, 0 };
+    GdkFont *font; 
     int i;
     float x, y;
-
-    colorgc = color_to_gc (GTK_WIDGET (det), &color, colormap);
-
+    
     char txt[10] = "";
+    font = gdk_font_load(det->elem_font);
     for (i = 0; i < det->nelem; i++) {
 	x =
 	    (det->knot_x[det->elem[0][i] - 1] +
@@ -234,14 +222,13 @@ void draw_nelem (DrawElem * det)
 	gcvt (int (i + 1), 10, txt);
 	gdk_draw_text (DRAWELEM (det)->pixmap,
 		       font,
-		       colorgc,
+		       det->elem_color,
 		       int (det->mash * x) + det->zero_x - int (gdk_string_width (font, txt	/*text */
 								) / 2),
 		       -int (det->mash * y) + det->zero_y +
 		       int (gdk_string_height (font, "0") / 2), txt, 10);
     }
 
-    gdk_gc_unref (colorgc);
     gdk_font_unref (font);
 }
 
@@ -596,44 +583,49 @@ void drawelem_fit (DrawElem * det)
     drawelem_show_elem (det);
 }
 
-float drawelem_get_nds(DrawElem * det,int x,int y)
+float drawelem_get_nds (DrawElem * det, int x, int y)
 {
-  int i,l,m,n; 
-  float nd=0;
-  float kx[3];           
-  
-  x = x-det->zero_x;
-  y = -(y-det->zero_y);
-  
-  for (i = 0; i < det->nelem; i++) 
-   if (drawelem_xy_in_elem (det, i, x, y) < 0.3) 
-    if (sinter == 1)
-    {
-        for (l = 0; l < 3; l++) 
-        {
-	    m = l + 1;
-	    n = m + 1;
-	    if (m > 2)
-		m = m - 3;
-	    if (n > 2)
-		n = n - 3;
+    int i, l, m, n;
+    float nd = 0;
+    float kx[3];
 
-	    kx[l] = koef (x, y,(det->knot_x[det->elem[l][i] -1] * det->mash),
-			       (det->knot_y[det->elem[l][i] -1] * det->mash),
-			       (det->knot_x[det->elem[m][i] -1] * det->mash),
-			       (det->knot_y[det->elem[m][i] -1] * det->mash),
-			       (det->knot_x[det->elem[n][i] -1] * det->mash),
-			       (det->knot_y[det->elem[n][i] -1] * det->mash));
-        }
+    x = x - det->zero_x;
+    y = -(y - det->zero_y);
 
-        nd = 0;
-	for (l = 0; l < 3; l++)
-	    nd =nd +kx[l] * nds_knot[det->elem[l][i] - 1];
-    }
-    else
-      nd=det->nds[i];
-    
-    return(nd);
+    for (i = 0; i < det->nelem; i++)
+	if (drawelem_xy_in_elem (det, i, x, y) < 0.3)
+	    if (sinter == 1) {
+		for (l = 0; l < 3; l++) {
+		    m = l + 1;
+		    n = m + 1;
+		    if (m > 2)
+			m = m - 3;
+		    if (n > 2)
+			n = n - 3;
+
+		    kx[l] =
+			koef (x, y,
+			      (det->knot_x[det->elem[l][i] - 1] *
+			       det->mash),
+			      (det->knot_y[det->elem[l][i] - 1] *
+			       det->mash),
+			      (det->knot_x[det->elem[m][i] - 1] *
+			       det->mash),
+			      (det->knot_y[det->elem[m][i] - 1] *
+			       det->mash),
+			      (det->knot_x[det->elem[n][i] - 1] *
+			       det->mash),
+			      (det->knot_y[det->elem[n][i] - 1] *
+			       det->mash));
+		}
+
+		nd = 0;
+		for (l = 0; l < 3; l++)
+		    nd = nd + kx[l] * nds_knot[det->elem[l][i] - 1];
+	    } else
+		nd = det->nds[i];
+
+    return (nd);
 }
 
 void load_knot (DrawElem * det, char *path)
@@ -896,9 +888,80 @@ static void drawelem_class_init (DrawElemClass * klass)
 {
 }
 
+void drawelem_set_font_elem (DrawElem * det,char *fontname)
+{
+     int i;
+     int len;
+     len = strlen(fontname);	
+    
+    if (det->elem_font != NULL)
+        delete (det->elem_font);
+    
+    det->elem_font = new char[len];
+
+    for (i = 0; i < len; i++)
+	det->elem_font[i] = fontname[i];
+    det->elem_font[len] = *"\0";
+
+    return;
+}
+char* drawelem_get_font_elem (DrawElem * det)
+{
+   return(det->elem_font);
+}
+void drawelem_set_font_knot (DrawElem * det,char *fontname)
+{
+     int i;
+     int len = strlen(fontname);
+
+     if (det->knot_font != NULL)
+        delete (det->knot_font);
+
+    det->knot_font = new char[len];
+
+    for (i = 0; i < len; i++)
+	det->knot_font[i] = fontname[i];
+	
+    det->knot_font[len] = *"\0";
+
+    return;
+
+}
+char* drawelem_get_font_knot (DrawElem * det)
+{
+   return(det->knot_font);
+}  
+
+void drawelem_set_color_elem (DrawElem * det,GdkGC *color)
+{
+   if (det->elem_color!=NULL)
+      gdk_gc_unref(det->elem_color);
+   det->elem_color = gdk_gc_ref(color);
+}
+GdkGC* drawelem_get_color_elem (DrawElem * det)
+{
+   return(det->elem_color);
+}
+void drawelem_set_color_knot (DrawElem * det,GdkGC *color)
+{
+   if (det->knot_color!=NULL)
+      gdk_gc_unref(det->knot_color);
+   //det->knot_color = gdk_gc_new(GTK_WIDGET(det)->window);
+   det->knot_color = gdk_gc_ref(color);
+}
+GdkGC* drawelem_get_color_knot (DrawElem * det)
+{
+   return(det->knot_color);
+}
 static void drawelem_init (DrawElem * det)
 {
     int i;
+    gint depth = gdk_visual_get_best_depth ();
+    GdkColor color_elem = { 0, 65535, 0, 0 };
+    GdkColor color_knot = { 0, 0,0,65535 };
+    
+    GdkGCValues gc_values;
+    
     gtk_signal_connect (GTK_OBJECT (det), "expose_event",
 			(GtkSignalFunc) expose_event, NULL);
     gtk_signal_connect (GTK_OBJECT (det), "configure_event",
@@ -909,11 +972,23 @@ static void drawelem_init (DrawElem * det)
     det->knot_y = NULL;
     det->nds = NULL;
     det->mash = 5;
-
+    
+    drawelem_set_font_elem (det,"-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
+    drawelem_set_font_knot (det,"-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
+    
     colormap = gdk_colormap_get_system ();
+    if (!gdk_color_alloc (colormap, &color_elem))
+	g_print ("Ошибка: Цвет не найден.\n ");
+    gc_values.foreground = color_elem; 
+    det->elem_color = gtk_gc_get(depth, colormap, &gc_values,GDK_GC_FOREGROUND);
+    if (!gdk_color_alloc (colormap, &color_knot))
+	g_print ("Ошибка: Цвет не найден.\n ");
+    gc_values.foreground = color_knot; 
+    det->knot_color = gtk_gc_get(depth, colormap, &gc_values,GDK_GC_FOREGROUND);;
 }
 
 GtkWidget *drawelem_new (void)
 {
     return GTK_WIDGET (gtk_type_new (drawelem_get_type ()));
 }
+

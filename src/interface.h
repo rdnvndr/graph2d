@@ -13,5 +13,8 @@ GtkWidget *create_about_dialog (void);
 GtkWidget *create_open_dialog (void);
 GtkWidget *create_save_dialog (void);
 GtkWidget *create_pal_dialog (void);
+GtkWidget *create_options_dialog (void);
+GtkWidget* create_font_dialog (void);
+GtkWidget* create_color_dialog (void);
 
 #endif

@@ -3,8 +3,28 @@
 #include "drawelem.h"
 #include <stdlib.h>
 static char *dirname = NULL;
-
+GdkPixmap *pixmap_knot = NULL;
+GdkPixmap *pixmap_elem = NULL;
+static GdkGC     *color_knot = NULL;
+static GdkGC     *color_elem = NULL;
 char *savename = "";
+
+GdkGC *color_to_gc (GtkWidget * widget, gdouble* fcolor)
+{
+    GdkColor color;
+    GdkGC *colorgc;
+    GdkGCValues gc_values;
+    color.red = gushort(fcolor[0] * 256 * 255);
+    color.green = gushort(fcolor[1] * 256 * 255);
+    color.blue =gushort( fcolor[2] * 256 * 255);
+    if (!gdk_color_alloc (gdk_colormap_get_system (), &color))
+	g_print ("Ошибка: Цвет не найден.\n ");
+    gc_values.foreground = color;
+    colorgc = gdk_gc_new_with_values (GTK_WIDGET (widget)->window,
+				      &gc_values, GDK_GC_FOREGROUND);
+    return (colorgc);
+};
+
 GtkWidget *lookup_widget (GtkWidget * widget, const gchar * widget_name)
 {
     GtkWidget *parent, *found_widget;
@@ -31,21 +51,15 @@ GtkWidget *lookup_widget (GtkWidget * widget, const gchar * widget_name)
 void on_about_ok (GtkWidget * widget, gpointer Data)
 {
     GtkWidget *about;
-    about=gtk_widget_get_toplevel (GTK_WIDGET (widget));
+    about = gtk_widget_get_toplevel (GTK_WIDGET (widget));
     gtk_widget_destroy (about);
 }
 
 void on_about_dialog (GtkWidget * widget, gpointer Data)
 {
     GtkWidget *about;
-/*    if (gtk_object_get_data (GTK_OBJECT (widget),"about_dialog")==NULL)*/
-    {
-       about = create_about_dialog ();
-/*       g_print(gtk_widget_get_name(widget->parent));
-       g_print("\n");
-       gtk_object_set_data (GTK_OBJECT(widget), "about_dialog", about);*/
-       gtk_widget_show (about);
-    }
+    about = create_about_dialog ();
+    gtk_widget_show (about);
 }
 
 void on_close_main_window (GtkWidget * widget, gpointer Data)
@@ -59,16 +73,68 @@ void on_open_dialog (GtkWidget * widget, gpointer Data)
     GtkWidget *drawelem;
 
     drawelem = lookup_widget (widget, "drawelem");
-    
-    if (dirname!=NULL)
-       chdir(dirname);
-    
-    opendialog = create_open_dialog ();
 
+    if (dirname != NULL)
+	chdir (dirname);
+
+    opendialog = create_open_dialog ();
     gtk_object_set_data (GTK_OBJECT (opendialog), "drawelem", drawelem);
     gtk_object_set_data (GTK_OBJECT (opendialog), "menuitem", widget);
 
     gtk_widget_show (opendialog);
+}
+
+void refresh_rulers (GtkWidget * draw)
+{
+    GtkWidget *ver_ruler;
+    GtkWidget *hor_ruler;
+    GtkWidget *scrolledwindow;
+    gint height, width;
+    float max;
+
+    ver_ruler = lookup_widget (draw, "ver_ruler");
+    hor_ruler = lookup_widget (draw, "hor_ruler");
+    scrolledwindow = lookup_widget (draw, "scrolledwindow");
+
+    gdk_window_get_size (DRAWELEM (draw)->pixmap, &width, &height);
+
+    gtk_widget_set_usize (ver_ruler,-1, height + 5);
+    gtk_widget_set_usize (hor_ruler, width + 5, -1);
+
+    max = (scrolledwindow->allocation.height > height) ?
+	scrolledwindow->allocation.height : height;
+    float delta_y =
+	(scrolledwindow->allocation.height >
+	 height) ? ((scrolledwindow->allocation.height - height) / 2) : 0;
+    gtk_ruler_set_range (GTK_RULER (ver_ruler),
+			 (DRAWELEM (draw)->zero_y +
+			  delta_y) / DRAWELEM (draw)->mash,
+			 (-max + DRAWELEM (draw)->zero_y +
+			  delta_y) / DRAWELEM (draw)->mash, 10,
+			 (-max + DRAWELEM (draw)->zero_y +
+			  delta_y) / DRAWELEM (draw)->mash);
+
+    max = (scrolledwindow->allocation.width > width) ?
+	scrolledwindow->allocation.width : width;
+    float delta_x =
+	(scrolledwindow->allocation.width >
+	 width) ? ((scrolledwindow->allocation.width - width) / 2 +
+		   20) : 20;
+    gtk_ruler_set_range (GTK_RULER (hor_ruler),
+			 ((DRAWELEM (draw)->zero_x - delta_x) /
+			  DRAWELEM (draw)->mash),
+			 ((max + (DRAWELEM (draw)->zero_x - delta_x)) /
+			  DRAWELEM (draw)->mash), 0,
+			 (max +
+			  (DRAWELEM (draw)->zero_x -
+			   delta_x)) / DRAWELEM (draw)->mash);
+
+    /*
+       g_print("%d %s",scrolledwindow->allocation.width," width: ");
+       g_print("%d %s  %f",width," ",max);
+     */
+
+
 }
 
 void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
@@ -78,10 +144,11 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
     GtkWidget *item;
     GtkWidget *button;
     GtkWidget *menuitem;
+
     static char *filename = NULL;
-    
+
     int i, j;
-    
+
     filesel = gtk_widget_get_toplevel (GTK_WIDGET (widget));
     gtk_widget_hide (filesel);
 
@@ -91,9 +158,9 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
 	if (filename[i] == *"/")
 	    break;
     i++;
-    
-    if (dirname==NULL)
-       delete(dirname);
+
+    if (dirname == NULL)
+	delete (dirname);
     dirname = new char[i];
 
     for (j = 0; j < i; j++)
@@ -104,8 +171,10 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
     g_print ("\n");
 
     draw = lookup_widget (filesel, "drawelem");
+
     savename = NULL;
     drawelem_load_all (DRAWELEM (draw), dirname);
+    refresh_rulers (draw);
 
     menuitem = lookup_widget (filesel, "menuitem");
     item = lookup_widget (menuitem, "save");
@@ -149,7 +218,7 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
 
     button = lookup_widget (menuitem, "button_knot");
     gtk_widget_set_sensitive (button, TRUE);
-    
+
     button = lookup_widget (menuitem, "button_inter");
     gtk_widget_set_sensitive (button, TRUE);
 }
@@ -242,6 +311,7 @@ void on_zoomin (GtkWidget * widget, gpointer Data)
     drawelem = lookup_widget (widget, "drawelem");
     DRAWELEM (drawelem)->mash++;
     drawelem_fit (DRAWELEM (drawelem));
+    refresh_rulers (drawelem);
 }
 
 void on_zoomout (GtkWidget * widget, gpointer Data)
@@ -251,6 +321,7 @@ void on_zoomout (GtkWidget * widget, gpointer Data)
     drawelem = lookup_widget (widget, "drawelem");
     DRAWELEM (drawelem)->mash--;
     drawelem_fit (DRAWELEM (drawelem));
+    refresh_rulers (drawelem);
 }
 
 void on_pal_dialog (GtkWidget * widget, gpointer Data)
@@ -263,6 +334,7 @@ void on_pal_dialog (GtkWidget * widget, gpointer Data)
     gtk_object_set_data (GTK_OBJECT (opendialog), "drawelem", drawelem);
     gtk_widget_show (opendialog);
 }
+
 
 void on_pal_dialog_ok (GtkWidget * widget, gpointer Data)
 {
@@ -281,9 +353,9 @@ void on_pal_dialog_ok (GtkWidget * widget, gpointer Data)
     g_print (filename);
     g_print ("\n");
 
-    
+
     draw = lookup_widget (filesel, "drawelem");
-    drawelem_loadpal (DRAWELEM (draw),filename);
+    drawelem_loadpal (DRAWELEM (draw), filename);
     drawelem_fit (DRAWELEM (draw));
 }
 
@@ -313,8 +385,8 @@ void on_nap (GtkWidget * widget, gpointer Data)
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (1);
-    if (dirname!=NULL)
-       chdir(dirname);
+    if (dirname != NULL)
+	chdir (dirname);
     drawelem_load_nds (DRAWELEM (draw), "sg_na.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -331,8 +403,8 @@ void on_def (GtkWidget * widget, gpointer Data)
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (2);
-    if (dirname!=NULL)
-       chdir(dirname);
+    if (dirname != NULL)
+	chdir (dirname);
     drawelem_load_nds (DRAWELEM (draw), "na_df.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -349,8 +421,8 @@ void on_mtr (GtkWidget * widget, gpointer Data)
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (3);
-    if (dirname!=NULL)
-       chdir(dirname);
+    if (dirname != NULL)
+	chdir (dirname);
     drawelem_load_nds (DRAWELEM (draw), "ntg.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -623,38 +695,340 @@ void on_button_inter (GtkWidget * widget, gpointer Data)
     }
 }
 
-gint drawelem_motion_notify_event(GtkWidget *widget, GdkEventMotion *event)
+gint drawelem_motion_notify_event (GtkWidget * widget,
+				   GdkEventMotion * event)
 {
-   int x, y;
-   GdkModifierType state;
-   float result_nds;
-   char txt[10] = "";
-   char txt1[17] = " НДС: ";
-  
-   GtkWidget *draw;
-   GtkWidget *status_bar_nds;
+    int x, y;
+    GdkModifierType state;
+    float result_nds;
+    char txt[10] = "";
+    char txt1[17] = " НДС: ";
 
-   if (event->is_hint)
-      gdk_window_get_pointer (event->window, &x, &y, &state);
-  
-  
+    GtkWidget *draw;
+    GtkWidget *status_bar_nds;
 
-   status_bar_nds = lookup_widget (widget, "statusbar_nds");
-   draw = lookup_widget (widget, "drawelem");
-  
-   if (drawelem_get()>0)
-   {
-      result_nds = drawelem_get_nds(DRAWELEM(draw),x,y);
-      
-      gcvt (double ((int) (result_nds*10000))/10000, 10, txt);
-      strcat(txt1,txt);
-      gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1,
-      txt1);
-   }
-   else
-   {
-     gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1,
-			_(" НДС: не обнаружено "));
-   }
-   return TRUE;
+    if (event->is_hint)
+	gdk_window_get_pointer (event->window, &x, &y, &state);
+
+
+
+    status_bar_nds = lookup_widget (widget, "statusbar_nds");
+    draw = lookup_widget (widget, "drawelem");
+
+    if (drawelem_get () > 0) {
+	result_nds = drawelem_get_nds (DRAWELEM (draw), x, y);
+
+	gcvt (double ((int) (result_nds * 10000)) / 10000, 10, txt);
+	strcat (txt1, txt);
+	gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1, txt1);
+    } else {
+	gtk_statusbar_push (GTK_STATUSBAR (status_bar_nds), 1,
+			    _(" НДС: не обнаружено "));
+    }
+    return TRUE;
+}
+
+void on_options_dialog (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *options;
+    GtkWidget *drawelem;
+    GtkWidget *toolbar;
+    
+    GtkWidget *draw_elem_color;
+    GtkWidget *draw_knot_color;
+    GtkWidget *entry_elem;
+    GtkWidget *entry_knot;
+    
+    GtkWidget *radiobutton_it;
+    GtkWidget *radiobutton_i;
+    GtkWidget *radiobutton_t;
+    
+    options = create_options_dialog ();
+    drawelem = lookup_widget (widget, "drawelem");
+    toolbar = lookup_widget (widget, "toolbar");
+    
+    draw_elem_color = lookup_widget (options, "opt_drawingarea_elem_color");
+    draw_knot_color = lookup_widget (options, "opt_drawingarea_knot_color");
+    entry_elem = lookup_widget (options, "opt_entry_elem_font");
+    entry_knot = lookup_widget (options, "opt_entry_knot_font");
+    radiobutton_it = lookup_widget (options,"opt_radiobutton_toolbar_it");
+    radiobutton_i = lookup_widget (options,"opt_radiobutton_toolbar_i");
+    radiobutton_t = lookup_widget (options,"opt_radiobutton_toolbar_t");
+    
+    gtk_object_set_data (GTK_OBJECT (options), "drawelem", drawelem);
+    gtk_object_set_data (GTK_OBJECT (options), "toolbar", toolbar);
+    
+    gtk_entry_set_text(GTK_ENTRY(entry_elem),drawelem_get_font_elem (DRAWELEM(drawelem)));
+    gtk_entry_set_text(GTK_ENTRY(entry_knot),drawelem_get_font_knot (DRAWELEM(drawelem)));
+    
+    color_elem = gdk_gc_ref(drawelem_get_color_elem (DRAWELEM(drawelem)));
+    color_knot = gdk_gc_ref(drawelem_get_color_knot (DRAWELEM(drawelem)));
+    
+    if (GTK_TOOLBAR(toolbar)->style==GTK_TOOLBAR_BOTH)
+       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radiobutton_it),TRUE);
+    else
+    if (GTK_TOOLBAR(toolbar)->style==GTK_TOOLBAR_TEXT)
+       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radiobutton_t),TRUE);
+    else
+    if (GTK_TOOLBAR(toolbar)->style==GTK_TOOLBAR_ICONS)
+       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radiobutton_i),TRUE);
+    
+    gtk_widget_show (options);
+    
+}
+
+
+void on_options_dialog_apply (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *draw_elem_color;
+    GtkWidget *draw_knot_color;
+    GtkWidget *entry_elem;
+    GtkWidget *entry_knot;
+    GtkWidget *drawelem;
+    GtkWidget *toolbar;
+    char *text;
+    
+    GtkWidget *radiobutton_it;
+    GtkWidget *radiobutton_i;
+    GtkWidget *radiobutton_t;
+    
+    draw_elem_color = lookup_widget (widget, "opt_drawingarea_elem_color");
+    draw_knot_color = lookup_widget (widget, "opt_drawingarea_knot_color");
+    entry_elem = lookup_widget (widget, "opt_entry_elem_font");
+    entry_knot = lookup_widget (widget, "opt_entry_knot_font");
+    toolbar = lookup_widget (widget, "toolbar");
+    radiobutton_it = lookup_widget (widget,"opt_radiobutton_toolbar_it");
+    radiobutton_i = lookup_widget (widget,"opt_radiobutton_toolbar_i");
+    radiobutton_t = lookup_widget (widget,"opt_radiobutton_toolbar_t");
+    
+    drawelem = lookup_widget (widget, "drawelem");
+    
+    text = gtk_entry_get_text(GTK_ENTRY(entry_knot));
+    
+    if (text!=NULL)
+        drawelem_set_font_knot (DRAWELEM(drawelem),text);
+    
+    text = gtk_entry_get_text(GTK_ENTRY(entry_elem));
+    
+    if (text!=NULL)
+       drawelem_set_font_elem (DRAWELEM(drawelem),text);
+    
+    drawelem_set_color_elem (DRAWELEM(drawelem),color_elem);
+    drawelem_set_color_knot (DRAWELEM(drawelem),color_knot);
+    
+    drawelem_fit (DRAWELEM (drawelem));
+    
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobutton_it))==TRUE)
+       gtk_toolbar_set_style(GTK_TOOLBAR(toolbar),GTK_TOOLBAR_BOTH);
+    else
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobutton_t))==TRUE)
+       gtk_toolbar_set_style(GTK_TOOLBAR(toolbar),GTK_TOOLBAR_TEXT);
+    else
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobutton_i))==TRUE)
+       gtk_toolbar_set_style(GTK_TOOLBAR(toolbar),GTK_TOOLBAR_ICONS);
+    return;
+}
+
+void on_options_dialog_ok (GtkWidget * widget, gpointer Data)
+{
+    on_options_dialog_apply(widget,Data);
+    gtk_widget_hide (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+    return ;
+}
+
+void on_options_dialog_cancel (GtkWidget * widget, gpointer Data)
+{
+   gtk_widget_hide (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+}
+
+void on_button_elem_font (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *font;
+    GtkWidget *entry;
+    
+    font = create_font_dialog();
+    entry = lookup_widget (widget, "opt_entry_elem_font");
+    gtk_object_set_data (GTK_OBJECT(font), "opt_entry",entry);
+    gtk_widget_show (font);
+}
+
+void on_button_elem_color (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *color;
+    GtkWidget *draw;
+    
+    color = create_color_dialog();
+    draw = lookup_widget (widget, "opt_drawingarea_elem_color");
+    gtk_object_set_data (GTK_OBJECT(color), "opt_draw",draw);
+    gtk_widget_show (color);
+}
+
+void on_button_knot_font (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *font;
+    GtkWidget *entry;
+    
+    font = create_font_dialog();
+    entry = lookup_widget (widget, "opt_entry_knot_font");
+    gtk_object_set_data (GTK_OBJECT(font), "opt_entry",entry);
+    gtk_widget_show (font);
+}
+
+void on_button_knot_color (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *color;
+    GtkWidget *draw;
+    
+    color = create_color_dialog();
+    draw = lookup_widget (widget, "opt_drawingarea_knot_color");
+    gtk_object_set_data (GTK_OBJECT(color), "opt_draw",draw);
+    gtk_widget_show (color);
+}
+
+void on_color_dialog_ok (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *draw;
+    GtkWidget *colorseldialog;
+    GtkColorSelection *colorsel;
+    gdouble color[4];
+    
+    colorseldialog = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+    colorsel=GTK_COLOR_SELECTION(GTK_COLOR_SELECTION_DIALOG(colorseldialog)->colorsel);
+
+    gtk_color_selection_get_color(colorsel,color);
+    gtk_color_selection_set_color(colorsel,color);
+    draw = lookup_widget (widget, "opt_draw");
+    
+    if (strcmp(gtk_widget_get_name (draw),"opt_drawingarea_elem_color")==0)
+    {
+       if (color_elem!=NULL)
+         gdk_gc_unref(color_elem);
+       color_elem = color_to_gc(draw,color);
+       gdk_draw_rectangle(pixmap_elem,
+                            color_elem,
+			    TRUE,
+			    0, 0,
+			    draw->allocation.width,
+     		    draw->allocation.height);
+     }
+     else
+     {
+         if (color_knot!=NULL)
+             gdk_gc_unref(color_knot);
+         color_knot = color_to_gc(draw,color);
+         gdk_draw_rectangle(pixmap_knot,
+                            color_knot,
+			    TRUE,
+			    0, 0,
+			    draw->allocation.width,
+			    draw->allocation.height);
+     }
+     gtk_widget_hide(draw);
+     gtk_widget_show(draw);
+     gtk_widget_hide (colorseldialog);
+    
+}
+
+void on_color_dialog_cancel (GtkWidget * widget, gpointer Data)
+{
+   gtk_widget_hide (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+}
+
+void on_color_dialog_help (GtkWidget * widget, gpointer Data)
+{
+
+}
+
+void on_font_dialog_apply (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *entry;
+    GtkWidget *fontsel;
+    gchar *fontname;
+    
+    fontsel = gtk_widget_get_toplevel (GTK_WIDGET (widget));
+    fontname = gtk_font_selection_dialog_get_font_name	(GTK_FONT_SELECTION_DIALOG(fontsel));
+    
+    entry = lookup_widget (widget, "opt_entry");
+    if (fontname!=NULL)
+      gtk_entry_set_text(GTK_ENTRY(entry),fontname);
+}
+
+
+void on_font_dialog_ok (GtkWidget * widget, gpointer Data)
+{
+    on_font_dialog_apply(widget,Data);
+    gtk_widget_hide (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+}
+
+void on_font_dialog_cancel (GtkWidget * widget, gpointer Data)
+{
+   gtk_widget_hide (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+}
+
+gint on_opt_configure_event_elem(GtkWidget * widget, GdkEventConfigure * event)
+{
+     if (!pixmap_elem) {
+	if (pixmap_elem!= NULL)
+	    gdk_pixmap_unref (pixmap_elem);
+	pixmap_elem = gdk_pixmap_new (widget->window,
+						    widget->
+						    allocation.width,
+						    widget->
+						    allocation.height, -1);
+
+	gdk_draw_rectangle (pixmap_elem,
+			    color_elem,
+			    TRUE,
+			    0, 0,
+			    widget->allocation.width,
+			    widget->allocation.height);
+    }	
+   
+    return TRUE;
+}
+
+gint on_opt_expose_event_elem(GtkWidget * widget, GdkEventExpose * event)
+{
+        gdk_draw_pixmap (widget->window,
+		     widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+		     pixmap_elem,
+		     event->area.x, event->area.y,
+		     event->area.x, event->area.y,
+		     widget->allocation.width, widget->allocation.height);
+    return FALSE;
+    
+}
+
+gint on_opt_configure_event_knot(GtkWidget * widget, GdkEventConfigure * event)
+{
+     if (!pixmap_knot) {
+	if (pixmap_knot!= NULL)
+	    gdk_pixmap_unref (pixmap_knot);
+	pixmap_knot = gdk_pixmap_new (widget->window,
+						    widget->
+						    allocation.width,
+						    widget->
+						    allocation.height, -1);
+
+	gdk_draw_rectangle (pixmap_knot,
+			    color_knot,
+			    TRUE,
+			    0, 0,
+			    widget->allocation.width,
+			    widget->allocation.height);
+    }	
+    return TRUE;
+}
+
+gint on_opt_expose_event_knot(GtkWidget * widget, GdkEventExpose * event)
+{
+   gdk_draw_pixmap (widget->window,
+		     widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+		     pixmap_knot,
+		     event->area.x, event->area.y,
+		     event->area.x, event->area.y,
+		     widget->allocation.width, widget->allocation.height);
+
+    return FALSE;
+    
 }
