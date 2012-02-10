@@ -28,14 +28,22 @@ GtkWidget *lookup_widget (GtkWidget * widget, const gchar * widget_name)
 
 void on_about_ok (GtkWidget * widget, gpointer Data)
 {
-    gtk_widget_destroy (gtk_widget_get_toplevel (GTK_WIDGET (widget)));
+    GtkWidget *about;
+    about=gtk_widget_get_toplevel (GTK_WIDGET (widget));
+    gtk_widget_destroy (about);
 }
 
 void on_about_dialog (GtkWidget * widget, gpointer Data)
 {
     GtkWidget *about;
-    about = create_about_dialog ();
-    gtk_widget_show (about);
+/*    if (gtk_object_get_data (GTK_OBJECT (widget),"about_dialog")==NULL)*/
+    {
+       about = create_about_dialog ();
+/*       g_print(gtk_widget_get_name(widget->parent));
+       g_print("\n");
+       gtk_object_set_data (GTK_OBJECT(widget), "about_dialog", about);*/
+       gtk_widget_show (about);
+    }
 }
 
 void on_close_main_window (GtkWidget * widget, gpointer Data)
@@ -271,8 +279,9 @@ void on_pal_dialog_ok (GtkWidget * widget, gpointer Data)
     g_print (filename);
     g_print ("\n");
 
-    drawelem_loadpal (filename);
+    
     draw = lookup_widget (filesel, "drawelem");
+    drawelem_loadpal (DRAWELEM (draw),filename);
     drawelem_fit (DRAWELEM (draw));
 }
 

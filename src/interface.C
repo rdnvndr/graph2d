@@ -504,6 +504,8 @@ GtkWidget *create_about_dialog (void)
     gtk_window_set_title (GTK_WINDOW (about_dialog), _("О Программе"));
     gtk_widget_set_usize (GTK_WIDGET (about_dialog), 240, 140);
     gtk_window_set_policy (GTK_WINDOW (about_dialog), FALSE, FALSE, FALSE);
+    gtk_signal_connect (GTK_OBJECT (about_dialog), "delete_event",
+                             GTK_SIGNAL_FUNC (on_about_ok), NULL);
     gtk_widget_show (about_dialog);
 
     about_frame = gtk_frame_new (NULL);
@@ -544,7 +546,7 @@ GtkWidget *create_about_dialog (void)
     gtk_box_pack_start (GTK_BOX(about_vbox),about_pixmapwid, FALSE, FALSE, 0);
     gtk_widget_show (about_pixmapwid);
     
-    about_label = gtk_label_new (_("Version 0.3.6\n\nCopyright (c) 2001 by\nRodionov Andrey\nAll rights reserved."));
+    about_label = gtk_label_new (_("Version 0.3.8\n\nCopyright (c) 2001 by\nRodionov Andrey\nAll rights reserved."));
     gtk_box_pack_start (GTK_BOX(about_vbox), about_label, FALSE, FALSE, 0);
     gtk_widget_show (about_label);
 

@@ -1,6 +1,9 @@
 #include "drawelem.h"
 #include "colormap.h"
-GdkColor *color_pal = NULL;
+#include <stdlib.h>
+
+GdkColormap *colormap;
+MyGdkGC *color_pal = NULL;
 int ncolor_pal = 0;
 int sdn = 0;
 int selem = 0;
@@ -40,56 +43,6 @@ void drawelem_show_nknot (void)
 void drawelem_set (int s)
 {
     sdn = s;
-}
-
-char *float_to_char (float n)
-{
-    int x, nn;
-    int i, j;
-    char *st = NULL;
-    int flag = 0;
-
-    nn = int (n);
-    j = 0;
-    if (int (1000 * n) > int (n) * 1000) {
-	nn = int (n * 1000);
-	if (n < 1)
-	    j++;
-	flag++;
-    }
-    x = nn;
-    while (x > 0) {
-	x = int (x / 10);
-	j++;
-    }
-
-    x = nn;
-
-    if (flag == 1)
-	j++;
-
-    if ((j < 5) && (flag == 1))
-	j = 5;
-
-    st = new char[j];
-    st[j] = *"\0";
-
-    if (n < 1) {
-	st[0] = *"0";
-	j--;
-    }
-
-    for (i = 1; i <= j; i++) {
-	if ((flag == 1) && (i == 4)) {
-	    st[strlen (st) - i] = *".";
-	} else {
-	    nn = int (nn / 10);
-	    x = x - nn * 10;
-	    st[strlen (st) - i] = char (int (*"0") + x);
-	    x = nn;
-	}
-    }
-    return (st);
 }
 
 float area_triangle (float x1, float y1, float x2, float y2, float x3,
@@ -135,6 +88,18 @@ float koef (float x1, float y1, float x2, float y2, float x3, float y3,
 	return (len (x1, y1, x, y) / 0.0000001);
 }
 
+float root_x (float x1, float y1, float x2, float y2, int y)
+{
+    float sub_y;
+
+    sub_y = y1 - y2;
+
+    if (sub_y == 0)
+	sub_y = 0.0000001;
+
+    return ((y - y1) / sub_y * (x1 - x2) + x1);
+}
+
 void drawelem_size (DrawElem * de, gint width, gint height)
 {
     gtk_drawing_area_size (GTK_DRAWING_AREA (de), width, height);
@@ -147,10 +112,10 @@ static gint configure_event (GtkWidget * widget, GdkEventConfigure * event)
 	if (DRAWELEM (widget)->pixmap != NULL)
 	    gdk_pixmap_unref (DRAWELEM (widget)->pixmap);
 	DRAWELEM (widget)->pixmap = gdk_pixmap_new (widget->window,
-						    widget->
-						    allocation.width,
-						    widget->
-						    allocation.height, -1);
+						    widget->allocation.
+						    width,
+						    widget->allocation.
+						    height, -1);
 
 	gdk_draw_rectangle (DRAWELEM (widget)->pixmap,
 			    widget->style->white_gc,
@@ -214,28 +179,27 @@ void draw_nknot (DrawElem * det)
     GdkFont *font =
 	gdk_font_load
 	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
-    GdkColormap *colormap;
+
     GdkGC *colorgc;
     GdkColor color = { 0, 0, 0, 65535 };
-    char *text = NULL;
+    char txt[10] = "";
     int i;
 
-    colormap = gdk_colormap_get_system ();
+
     colorgc = color_to_gc (GTK_WIDGET (det), &color, colormap);
 
+
     for (i = 0; i < det->nknot; i++) {
-	text = float_to_char (float (i + 1));
+	gcvt (int (i + 1), 10, txt);
 	gdk_draw_text (DRAWELEM (det)->pixmap,
 		       font,
 		       colorgc,
 		       int (det->mash * det->knot_x[i]) + det->zero_x + 2,
 		       -int (det->mash * det->knot_y[i]) + det->zero_y - 2,
-		       text, strlen (text));
-	delete (text);
+		       txt, 10);
     }
 
     gdk_gc_unref (colorgc);
-    gdk_colormap_unref (colormap);
     gdk_font_unref (font);
 }
 
@@ -244,16 +208,14 @@ void draw_nelem (DrawElem * det)
     GdkFont *font =
 	gdk_font_load
 	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
-    GdkColormap *colormap;
     GdkGC *colorgc;
     GdkColor color = { 0, 65535, 0, 0 };
-    char *text = NULL;
     int i;
     float x, y;
 
-    colormap = gdk_colormap_get_system ();
     colorgc = color_to_gc (GTK_WIDGET (det), &color, colormap);
 
+    char txt[10] = "";
     for (i = 0; i < det->nelem; i++) {
 	x =
 	    (det->knot_x[det->elem[0][i] - 1] +
@@ -264,46 +226,92 @@ void draw_nelem (DrawElem * det)
 	     det->knot_y[det->elem[1][i] - 1] +
 	     det->knot_y[det->elem[2][i] - 1]) / 3;
 
-	text = float_to_char (float (i + 1));
+	gcvt (int (i + 1), 10, txt);
 	gdk_draw_text (DRAWELEM (det)->pixmap,
 		       font,
 		       colorgc,
-		       int (det->mash * x) + det->zero_x -
-		       int (gdk_string_width (font, text) / 2),
+		       int (det->mash * x) + det->zero_x - int (gdk_string_width (font, txt	/*text */
+								) / 2),
 		       -int (det->mash * y) + det->zero_y +
-		       int (gdk_string_height (font, "0") / 2), text,
-		       strlen (text));
-	delete (text);
+		       int (gdk_string_height (font, "0") / 2), txt, 10);
     }
 
     gdk_gc_unref (colorgc);
-    gdk_colormap_unref (colormap);
     gdk_font_unref (font);
+}
+
+void drawelem_set_default_colormap (DrawElem * det)
+{
+    int i;
+    ncolor_pal = 256;
+    color_pal = new MyGdkGC[ncolor_pal];
+
+    for (i = 0; i < ncolor_pal; i++) {
+	color_pal[i] = color_to_gc (GTK_WIDGET (det),
+				    (default_color + i), colormap);
+    }
+}
+
+float drawelem_xy_in_elem (DrawElem * det, int i, int x, int y)
+{
+    float S1, S2, nd;
+    int l, m;
+    S1 =
+	area_triangle (
+		       (det->knot_x[det->elem[0][i] -
+				    1] * det->mash),
+		       (det->knot_y[det->elem[0][i] -
+				    1] * det->mash),
+		       (det->knot_x[det->elem[1][i] -
+				    1] * det->mash),
+		       (det->knot_y[det->elem[1][i] -
+				    1] * det->mash),
+		       (det->knot_x[det->elem[2][i] -
+				    1] * det->mash),
+		       (det->knot_y[det->elem[2][i] - 1] * det->mash));
+    S2 = 0;
+    for (l = 0; l < 3; l++) {
+	m = l + 1;
+	if (m > 2)
+	    m = 0;
+	S2 =
+	    S2 +
+	    area_triangle (
+			   (det->knot_x[det->elem[l][i] - 1] * det->mash),
+			   (det->knot_y[det->elem[l][i] -
+					1] * det->mash),
+			   (det->knot_x[det->elem[m][i] -
+					1] * det->mash),
+			   (det->knot_y[det->elem[m][i] -
+					1] * det->mash), x, y);
+
+    }
+
+    nd = S2 - S1;
+    if (nd < 0)
+	nd = nd * (-1);
+    return nd;
 }
 
 void drawelem_show_elem (DrawElem * det)
 {
     GdkGC *colorgc;
-    GdkColormap *colormap;
     GdkFont *font;
 
     int num, i, th;
-    gint csize;
     float maxn, minn, inter;
     int colline;
     int width, height;
-    char *text = NULL;
+    char txt[10] = "";
     // Переменные для интерполяции
     int max_Y, min_Y, k, max_X, min_X, l, m, n, j;
-    float S1, S2, nd;
+    float x1, x2, y1, y2, mx[2];
+    float nd;
     float kx[3];
-    
-    colormap = gdk_colormap_get_system ();
 
     if (color_pal == NULL)
-	csize = 256;
-    else
-	csize = ncolor_pal;
+	drawelem_set_default_colormap (det);
+
 
     if (sdn != 0) {
 	maxn = det->nds[0];
@@ -315,26 +323,20 @@ void drawelem_show_elem (DrawElem * det)
 	    if (minn > det->nds[i])
 		minn = det->nds[i];
 	}
-	inter = (maxn - minn) / csize;
+	inter = (maxn - minn) / ncolor_pal;
     }
 
     /* Вывод сетки или заливка заготовки */
+
     for (i = 0; i < det->nelem; i++) {
 	if (sdn != 0) {
 	    if (sinter == 0) {
 		num = int ((det->nds[i] - minn) / inter);
 		if ((inter * num) > (det->nds[i] - minn))
 		    num--;
-		if (color_pal == NULL)
-		    colorgc =
-			color_to_gc (GTK_WIDGET (det), &default_color[num],
-				     colormap);
-		else
-		    colorgc =
-			color_to_gc (GTK_WIDGET (det), &color_pal[num],
-				     colormap);
-
-		draw_triangle (det->pixmap, colorgc, TRUE,
+		if (num > (ncolor_pal - 1))
+		    num = ncolor_pal - 1;
+		draw_triangle (det->pixmap, color_pal[num], TRUE,
 			       int (det->mash *
 				    det->knot_x[det->elem[0][i] - 1]) +
 			       det->zero_x,
@@ -353,13 +355,10 @@ void drawelem_show_elem (DrawElem * det)
 			       -int (det->mash *
 				     det->knot_y[det->elem[2][i] - 1]) +
 			       det->zero_y);
-		gdk_gc_unref (colorgc);
 	    } else {
 
 		max_Y = int (det->knot_y[det->elem[0][i] - 1] * det->mash);
 		min_Y = int (det->knot_y[det->elem[0][i] - 1] * det->mash);
-		max_X = int (det->knot_x[det->elem[0][i] - 1] * det->mash);
-		min_X = int (det->knot_x[det->elem[0][i] - 1] * det->mash);
 
 		for (j = 1; j < 3; j++) {
 		    if (int (det->knot_y[det->elem[j][i] - 1] * det->mash)
@@ -372,130 +371,95 @@ void drawelem_show_elem (DrawElem * det)
 			min_Y =
 			    int (det->knot_y[det->elem[j][i] - 1] *
 				 det->mash);
-
-		    if (int (det->knot_x[det->elem[j][i] - 1] * det->mash)
-			> max_X)
-			max_X =
-			    int (det->knot_x[det->elem[j][i] - 1] *
-				 det->mash);
-		    if (int (det->knot_x[det->elem[j][i] - 1] * det->mash)
-			< min_X)
-			min_X =
-			    int (det->knot_x[det->elem[j][i] - 1] *
-				 det->mash);
 		}
 
-		for (j = min_Y; j <= max_Y; j++)
-		    for (k = min_X; k <= max_X; k++) {
-			S1 =
-			    area_triangle (
-					   (det->
-					    knot_x[det->elem[0][i] -
-						   1] * det->mash),
-					   (det->
-					    knot_y[det->elem[0][i] -
-						   1] * det->mash),
-					   (det->
-					    knot_x[det->elem[1][i] -
-						   1] * det->mash),
-					   (det->
-					    knot_y[det->elem[1][i] -
-						   1] * det->mash),
-					   (det->
-					    knot_x[det->elem[2][i] -
-						   1] * det->mash),
-					   (det->
-					    knot_y[det->elem[2][i] -
-						   1] * det->mash));
-			S2 = 0;
-			for (l = 0; l < 3; l++) {
-			    m = l + 1;
-			    if (m > 2)
-				m = 0;
-			    S2 =
-				S2 +
-				area_triangle (
-					       (det->
-						knot_x[det->elem[l][i] -
-						       1] * det->mash),
-					       (det->
-						knot_y[det->elem[l][i] -
-						       1] * det->mash),
-					       (det->
-						knot_x[det->elem[m][i] -
-						       1] * det->mash),
-					       (det->
-						knot_y[det->elem[m][i] -
-						       1] * det->mash), k,
-					       j);
+		for (j = min_Y; j <= max_Y; j++) {
+		    l = 0;
 
-			}
+		    for (k = 0; k < 3; k++) {
+			m = k + 1;
+			if (m > 2)
+			    m = 0;
 
-			nd = S2 - S1;
-			if (nd < 0)
-			    nd = nd * (-1);
+			x1 = det->knot_x[det->elem[k][i] - 1] * det->mash;
+			x2 = det->knot_x[det->elem[m][i] - 1] * det->mash;
+			y1 = det->knot_y[det->elem[k][i] - 1] * det->mash;
+			y2 = det->knot_y[det->elem[m][i] - 1] * det->mash;
 
-			if (nd < 0.3) {
-
-			    for (l = 0; l < 3; l++) {
-				m = l + 1;
-				n = m + 1;
-
-				if (m > 2)
-				    m = m - 3;
-				if (n > 2)
-				    n = n - 3;
-
-				kx[l] = koef (k, j,
-					      (det->
-					       knot_x[det->elem[l][i] -
-						      1] * det->mash),
-					      (det->
-					       knot_y[det->elem[l][i] -
-						      1] * det->mash),
-					      (det->
-					       knot_x[det->elem[m][i] -
-						      1] * det->mash),
-					      (det->
-					       knot_y[det->elem[m][i] -
-						      1] * det->mash),
-					      (det->
-					       knot_x[det->elem[n][i] -
-						      1] * det->mash),
-					      (det->
-					       knot_y[det->elem[n][i] -
-						      1] * det->mash));
-			    }
-
-			    nd = 0;
-
-			    for (l = 0; l < 3; l++)
-				nd =
-				    nd + kx[l] * nds_knot[det->elem[l][i] -
-							  1];
-
-			    num = int ((nd - minn) / inter);
-
-			    if ((inter * num) > (nd - minn))
-				num--;
-			    if (color_pal == NULL)
-				colorgc =
-				    color_to_gc (GTK_WIDGET (det),
-						 &default_color[num],
-						 colormap);
-			    else
-				colorgc =
-				    color_to_gc (GTK_WIDGET (det),
-						 &color_pal[num],
-						 colormap);
-
-			    gdk_draw_point (det->pixmap, colorgc,
-					    k + det->zero_x,
-					    -j + det->zero_y);
-
-			    gdk_gc_unref (colorgc);
+			if (((j > y1) && (j < y2))
+			    || ((j < y1) && (j > y2))) {
+			    mx[l] = root_x (x1, y1, x2, y2, j);
+			    l++;
 			}
 		    }
+		    if (mx[0] > mx[1]) {
+			min_X = (int) mx[1];
+			max_X = (int) mx[0];
+		    } else {
+			min_X = (int) mx[0];
+			max_X = (int) mx[1];
+		    }
+		    if (l == 2)
+			for (k = min_X; k <= max_X; k++) {
+			    if ((k == min_X) || (k == max_X))
+				nd = drawelem_xy_in_elem (det, i, k, j);
+			    else
+				nd = 0;
+
+			    if (nd < 0.3) {
+
+				for (l = 0; l < 3; l++) {
+				    m = l + 1;
+				    n = m + 1;
+
+				    if (m > 2)
+					m = m - 3;
+				    if (n > 2)
+					n = n - 3;
+
+				    kx[l] = koef (k, j,
+						  (det->knot_x
+						   [det->elem[l][i] -
+						    1] * det->mash),
+						  (det->knot_y
+						   [det->elem[l][i] -
+						    1] * det->mash),
+						  (det->knot_x
+						   [det->elem[m][i] -
+						    1] * det->mash),
+						  (det->knot_y
+						   [det->elem[m][i] -
+						    1] * det->mash),
+						  (det->knot_x
+						   [det->elem[n][i] -
+						    1] * det->mash),
+						  (det->knot_y
+						   [det->elem[n][i] -
+						    1] * det->mash));
+				}
+
+				nd = 0;
+
+				for (l = 0; l < 3; l++)
+				    nd =
+					nd +
+					kx[l] * nds_knot[det->elem[l][i] -
+							 1];
+
+				num = int ((nd - minn) / inter);
+
+				if ((inter * num) > (nd - minn))
+				    num--;
+				if (num > (ncolor_pal - 1))
+				    num = ncolor_pal - 1;
+
+				gdk_draw_point (det->pixmap,
+						color_pal[num],
+						k + det->zero_x,
+						-j + det->zero_y);
+			    }
+			}
+		}
 	    }
 	} else
 	    draw_triangle (det->pixmap, GTK_WIDGET (det)->style->black_gc,
@@ -529,27 +493,18 @@ void drawelem_show_elem (DrawElem * det)
 	return;
 
     /* Вывод градиента  */
-    if (csize < 128)
-	colline = int (256 / csize);
+    if (ncolor_pal < 128)
+	colline = int (256 / ncolor_pal);
     else
 	colline = 1;
 
     gdk_window_get_size (det->pixmap, &width, &height);
 
-    for (i = 0; i < csize; i++) {
-	if (color_pal == NULL)
-	    colorgc =
-		color_to_gc (GTK_WIDGET (det), &default_color[i],
-			     colormap);
-	else
-	    colorgc =
-		color_to_gc (GTK_WIDGET (det), &color_pal[i], colormap);
-
+    for (i = 0; i < ncolor_pal; i++) {
 	gdk_draw_rectangle (DRAWELEM (det)->pixmap,
-			    colorgc,
+			    color_pal[i],
 			    TRUE,
 			    width - 100, 10 + colline * i, 20, colline);
-	gdk_gc_unref (colorgc);
     }
 
     /* Вывод значений градиента */
@@ -558,18 +513,15 @@ void drawelem_show_elem (DrawElem * det)
 	("-adobe-helvetica-medium-r-normal--*-120-*-*-*-*-*-*");
     th = gdk_string_height (font, "H") + 3;
 
-    inter = (maxn - minn) / int (csize * colline / th);
-    for (i = 1; i <= int (csize * colline / th); i++) {
-	text = float_to_char (minn + (i) * inter + inter / 2);
-	gdk_draw_text (DRAWELEM (det)->pixmap,
-		       font,
-		       GTK_WIDGET (det)->style->black_gc,
-		       width - 70, 10 + i * th, text, strlen (text));
-	delete (text);
+    inter = (maxn - minn) / int (ncolor_pal * colline / th);
+    for (i = 1; i <= int (ncolor_pal * colline / th); i++) {
+	gcvt (double ((int) ((minn + (i) * inter + inter / 2) * 10000)) /
+	      10000, 10, txt);
+	gdk_draw_text (DRAWELEM (det)->pixmap, font,
+		       GTK_WIDGET (det)->style->black_gc, width - 70,
+		       10 + i * th, txt, 10);
     }
     gdk_font_unref (font);
-
-    gdk_colormap_unref (colormap);
 
     return;
 }
@@ -683,11 +635,14 @@ void load_knot (DrawElem * det, char *path)
     return;
 }
 
-void drawelem_loadpal (char *path)
+void drawelem_loadpal (DrawElem * det, char *path)
 {
     FILE *fd;
     int r, g, b;
     int i;
+    GdkColor color;
+
+
 
     fd = fopen (path, "r");
 
@@ -701,14 +656,15 @@ void drawelem_loadpal (char *path)
 	ncolor_pal++;
     }
     fclose (fd);
-    color_pal = new GdkColor[ncolor_pal];
+    color_pal = new MyGdkGC[ncolor_pal];
 
     fd = fopen (path, "r");
     for (i = 0; i < ncolor_pal; i++) {
 	fscanf (fd, "%x %x %x", &r, &g, &b);
-	color_pal[i].red = r;
-	color_pal[i].green = g;
-	color_pal[i].blue = b;
+	color.red = r;
+	color.green = g;
+	color.blue = b;
+	color_pal[i] = color_to_gc (GTK_WIDGET (det), &color, colormap);
     }
     fclose (fd);
     return;
@@ -813,9 +769,9 @@ void drawelem_load_nds (DrawElem * det, char *path)
 
     for (i = 0; i < (det->nelem); i++)
 	for (n = 0; n < 3; n++) {
-	    nds_knot[det->elem[n][i]-1] =
-		det->nds[i] + nds_knot[det->elem[n][i]-1];
-	    nds_knotn[det->elem[n][i]-1]++;
+	    nds_knot[det->elem[n][i] - 1] =
+		det->nds[i] + nds_knot[det->elem[n][i] - 1];
+	    nds_knotn[det->elem[n][i] - 1]++;
 	}
 
     for (i = 0; i < (det->nknot); i++)
@@ -908,6 +864,8 @@ static void drawelem_init (DrawElem * det)
     det->knot_y = NULL;
     det->nds = NULL;
     det->mash = 5;
+
+    colormap = gdk_colormap_get_system ();
 }
 
 GtkWidget *drawelem_new (void)

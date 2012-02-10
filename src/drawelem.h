@@ -11,7 +11,7 @@
 # define IS_DRAWELEM(obj)       GTK_CHECK_TYPE (obj, drawelem_get_type ())
 
 
-
+typedef GdkGC* MyGdkGC;
 typedef struct _DrawElem DrawElem;
 typedef struct _DrawElemClass DrawElemClass;
 
@@ -38,10 +38,11 @@ GtkWidget *drawelem_new (void);
 void drawelem_size (DrawElem * de, gint width, gint height);
 void drawelem_show_elem (DrawElem * det);
 void drawelem_center (DrawElem * det);
+void drawelem_set_default_colormap(DrawElem * det);
 void drawelem_fit (DrawElem * det);
 void drawelem_load_all (DrawElem * det, char *path);
 void drawelem_save (DrawElem * det, char *path);
-void drawelem_loadpal (char *path);
+void drawelem_loadpal (DrawElem * det, char *path);
 void drawelem_set (int s);
 void drawelem_load_nds (DrawElem * det, char *path);
 void drawelem_show_nelem (void);
