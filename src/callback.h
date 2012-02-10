@@ -75,4 +75,7 @@ gint on_opt_expose_event_elem(GtkWidget * widget, GdkEventExpose * event);
 gint on_opt_configure_event_knot (GtkWidget * widget, GdkEventConfigure * event);
 gint on_opt_expose_event_knot (GtkWidget * widget, GdkEventExpose * event);
 
+void on_save_options(GtkWidget * widget, gpointer Data);
+void on_load_options(GtkWidget * widget, gpointer Data);
+
 #endif

@@ -743,6 +743,11 @@ void on_options_dialog (GtkWidget * widget, gpointer Data)
     GtkWidget *radiobutton_i;
     GtkWidget *radiobutton_t;
     
+    GtkWidget *check_show_toolbar;
+    GtkWidget *check_show_tooltip;
+    GtkWidget *check_raised_button;
+    GtkWidget *toolbar_handlebox;
+    
     options = create_options_dialog ();
     drawelem = lookup_widget (widget, "drawelem");
     toolbar = lookup_widget (widget, "toolbar");
@@ -754,9 +759,14 @@ void on_options_dialog (GtkWidget * widget, gpointer Data)
     radiobutton_it = lookup_widget (options,"opt_radiobutton_toolbar_it");
     radiobutton_i = lookup_widget (options,"opt_radiobutton_toolbar_i");
     radiobutton_t = lookup_widget (options,"opt_radiobutton_toolbar_t");
+    check_show_toolbar = lookup_widget (options,"opt_check_show_toolbar");
+    check_show_tooltip = lookup_widget (options,"opt_check_show_tooltip");
+    check_raised_button = lookup_widget (options,"opt_check_raised_button");
+    toolbar_handlebox = lookup_widget (widget,"toolbar_handlebox");
     
     gtk_object_set_data (GTK_OBJECT (options), "drawelem", drawelem);
     gtk_object_set_data (GTK_OBJECT (options), "toolbar", toolbar);
+    gtk_object_set_data (GTK_OBJECT (options),"toolbar_handlebox",toolbar_handlebox);
     
     gtk_entry_set_text(GTK_ENTRY(entry_elem),drawelem_get_font_elem (DRAWELEM(drawelem)));
     gtk_entry_set_text(GTK_ENTRY(entry_knot),drawelem_get_font_knot (DRAWELEM(drawelem)));
@@ -772,6 +782,15 @@ void on_options_dialog (GtkWidget * widget, gpointer Data)
     else
     if (GTK_TOOLBAR(toolbar)->style==GTK_TOOLBAR_ICONS)
        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radiobutton_i),TRUE);
+    
+    if (gtk_toolbar_get_button_relief(GTK_TOOLBAR(toolbar)) == GTK_RELIEF_NONE)
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_raised_button),TRUE);
+	
+    if (GTK_TOOLBAR(toolbar)->tooltips->enabled == 1)
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_show_tooltip),TRUE);
+    
+    if (GTK_WIDGET_VISIBLE(toolbar_handlebox)==TRUE)
+       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_show_toolbar),TRUE);
     
     gtk_widget_show (options);
     
@@ -791,6 +810,10 @@ void on_options_dialog_apply (GtkWidget * widget, gpointer Data)
     GtkWidget *radiobutton_it;
     GtkWidget *radiobutton_i;
     GtkWidget *radiobutton_t;
+    GtkWidget *check_show_toolbar;
+    GtkWidget *check_show_tooltip;
+    GtkWidget *check_raised_button;
+    GtkWidget *toolbar_handlebox;
     
     draw_elem_color = lookup_widget (widget, "opt_drawingarea_elem_color");
     draw_knot_color = lookup_widget (widget, "opt_drawingarea_knot_color");
@@ -800,6 +823,10 @@ void on_options_dialog_apply (GtkWidget * widget, gpointer Data)
     radiobutton_it = lookup_widget (widget,"opt_radiobutton_toolbar_it");
     radiobutton_i = lookup_widget (widget,"opt_radiobutton_toolbar_i");
     radiobutton_t = lookup_widget (widget,"opt_radiobutton_toolbar_t");
+    check_show_toolbar = lookup_widget (widget,"opt_check_show_toolbar");
+    check_show_tooltip = lookup_widget (widget,"opt_check_show_tooltip");
+    check_raised_button = lookup_widget (widget,"opt_check_raised_button");
+    toolbar_handlebox = lookup_widget (widget,"toolbar_handlebox");
     
     drawelem = lookup_widget (widget, "drawelem");
     
@@ -826,6 +853,22 @@ void on_options_dialog_apply (GtkWidget * widget, gpointer Data)
     else
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobutton_i))==TRUE)
        gtk_toolbar_set_style(GTK_TOOLBAR(toolbar),GTK_TOOLBAR_ICONS);
+       
+     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_show_toolbar))==TRUE)
+        gtk_widget_show(toolbar_handlebox);
+    else
+        gtk_widget_hide(toolbar_handlebox);
+    
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_show_tooltip))==TRUE)
+        gtk_toolbar_set_tooltips (GTK_TOOLBAR(toolbar),TRUE);
+    else
+        gtk_toolbar_set_tooltips (GTK_TOOLBAR(toolbar),FALSE);
+    
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_raised_button))==TRUE)
+        gtk_toolbar_set_button_relief (GTK_TOOLBAR(toolbar),GTK_RELIEF_NONE);
+    else
+        gtk_toolbar_set_button_relief (GTK_TOOLBAR(toolbar),GTK_RELIEF_NORMAL);
+    
     return;
 }
 
@@ -1031,4 +1074,14 @@ gint on_opt_expose_event_knot(GtkWidget * widget, GdkEventExpose * event)
 
     return FALSE;
     
+}
+
+void on_save_options (GtkWidget * widget, gpointer Data)
+{
+
+}
+
+void on_load_options (GtkWidget * widget, gpointer Data)
+{
+
 }

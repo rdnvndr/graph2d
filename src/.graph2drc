@@ -1,0 +1,25 @@
+######################################################################
+#                         Graph2d config file        version  0.7.0  #
+#                                                                    #
+#  Everything in this file can be changed in the option dialogs.     #
+#      (so there should be no need to edit this file by hand)        #
+#                                                                    #
+######################################################################
+
+##### Interface Options #####
+
+main_window_width: 551
+
+main_window_height: 508
+
+float_window_x: 125
+
+float_window_y: 150
+
+float_window_width: 285
+
+float_window_height: 350
+
+######################################################################
+#                      end of Graph2D config file                    #
+######################################################################

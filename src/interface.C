@@ -266,6 +266,7 @@ GtkWidget *create_main_window (void)
     gtk_widget_show (item);
 
     toolbar_handlebox = gtk_handle_box_new ();
+    gtk_object_set_data (GTK_OBJECT (main_window), "toolbar_handlebox", toolbar_handlebox);
     gtk_container_set_border_width (GTK_CONTAINER (toolbar_handlebox), 2);
     gtk_box_pack_start (GTK_BOX (main_vbox), toolbar_handlebox, FALSE,
 			TRUE, 0);
@@ -851,11 +852,16 @@ GtkWidget *create_options_dialog (void)
   GtkWidget *opt_frame_knot_color;
   GtkWidget *opt_drawingarea_knot_color;
   GtkWidget *opt_frame_toolbar;
-  GtkWidget *opt_vbox_toolbar;
+  GtkWidget *opt_vbox_toolbar_toggle;
+  GtkWidget *opt_hbox_toolbar;
   GSList *group_toolbar_check_group = NULL;
   GtkWidget *opt_radiobutton_toolbar_it;
   GtkWidget *opt_radiobutton_toolbar_i;
   GtkWidget *opt_radiobutton_toolbar_t;
+  GtkWidget *opt_vbox_toolbar_check;
+  GtkWidget *opt_check_show_toolbar;
+  GtkWidget *opt_check_show_tooltip;
+  GtkWidget *opt_check_raised_button;
   
   GdkPixmap *opt_pixmap_elem;
   GdkPixmap *opt_pixmap_knot;
@@ -1034,32 +1040,65 @@ GtkWidget *create_options_dialog (void)
   gtk_box_pack_start (GTK_BOX (opt_vbox_gui), opt_frame_toolbar, FALSE, TRUE, 0);
   gtk_container_set_border_width (GTK_CONTAINER (opt_frame_toolbar), 5);
 
-  opt_vbox_toolbar = gtk_vbox_new (FALSE, 0);
-  gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_vbox_toolbar", opt_vbox_toolbar);
-  gtk_widget_show (opt_vbox_toolbar);
-  gtk_container_add (GTK_CONTAINER (opt_frame_toolbar), opt_vbox_toolbar);
-  gtk_container_set_border_width (GTK_CONTAINER (opt_vbox_toolbar), 5);
+  opt_hbox_toolbar = gtk_hbox_new (FALSE, 0);
+  gtk_object_set_data_full (GTK_OBJECT (opt_dialog), "opt_hbox_toolbar", opt_hbox_toolbar,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (opt_hbox_toolbar);
+  gtk_container_add (GTK_CONTAINER (opt_frame_toolbar), opt_hbox_toolbar);
+  gtk_container_set_border_width (GTK_CONTAINER (opt_hbox_toolbar), 5);
+
+  opt_vbox_toolbar_toggle = gtk_vbox_new (FALSE, 0);
+  gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_vbox_toolbar_toggle", opt_vbox_toolbar_toggle);
+  gtk_widget_show (opt_vbox_toolbar_toggle);
+  gtk_box_pack_start (GTK_BOX (opt_hbox_toolbar), opt_vbox_toolbar_toggle, TRUE, TRUE, 0);
 
   opt_radiobutton_toolbar_it = gtk_radio_button_new_with_label (group_toolbar_check_group, _("Иконка и текст"));
   group_toolbar_check_group = gtk_radio_button_group (GTK_RADIO_BUTTON (opt_radiobutton_toolbar_it));
   gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_radiobutton_toolbar_it", opt_radiobutton_toolbar_it);
   gtk_widget_show (opt_radiobutton_toolbar_it);
-  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar), opt_radiobutton_toolbar_it, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_toggle), opt_radiobutton_toolbar_it, FALSE, FALSE, 0);
 
   opt_radiobutton_toolbar_i = gtk_radio_button_new_with_label (group_toolbar_check_group, _("Только иконка"));
   group_toolbar_check_group = gtk_radio_button_group (GTK_RADIO_BUTTON (opt_radiobutton_toolbar_i));
   //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(opt_radiobutton_toolbar_i),TRUE);
   gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_radiobutton_toolbar_i", opt_radiobutton_toolbar_i);
   gtk_widget_show (opt_radiobutton_toolbar_i);
-  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar), opt_radiobutton_toolbar_i, FALSE, FALSE, 1);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_toggle), opt_radiobutton_toolbar_i, FALSE, FALSE, 1);
 
   opt_radiobutton_toolbar_t = gtk_radio_button_new_with_label (group_toolbar_check_group, _("Только текст"));
   group_toolbar_check_group = gtk_radio_button_group (GTK_RADIO_BUTTON (opt_radiobutton_toolbar_t));
   gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_radiobutton_toolbar_t", opt_radiobutton_toolbar_t);
   gtk_widget_show (opt_radiobutton_toolbar_t);
-  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar), opt_radiobutton_toolbar_t, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_toggle), opt_radiobutton_toolbar_t, FALSE, FALSE, 0);
 
-    
+  opt_vbox_toolbar_check = gtk_vbox_new (FALSE, 0);
+  gtk_widget_ref (opt_vbox_toolbar_check);
+  gtk_object_set_data_full (GTK_OBJECT (opt_dialog), "opt_vbox_toolbar_check", opt_vbox_toolbar_check,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (opt_vbox_toolbar_check);
+  gtk_box_pack_start (GTK_BOX (opt_hbox_toolbar), opt_vbox_toolbar_check, TRUE, TRUE, 0);
+
+  opt_check_show_toolbar = gtk_check_button_new_with_label (_("Показывать панель"));
+  gtk_widget_ref (opt_check_show_toolbar);
+  gtk_object_set_data_full (GTK_OBJECT (opt_dialog), "opt_check_show_toolbar", opt_check_show_toolbar,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (opt_check_show_toolbar);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_check), opt_check_show_toolbar, TRUE, TRUE, 0);
+
+  opt_check_show_tooltip = gtk_check_button_new_with_label (_("Показывать подсказки"));
+  gtk_widget_ref (opt_check_show_tooltip);
+  gtk_object_set_data_full (GTK_OBJECT (opt_dialog), "opt_check_show_tooltip", opt_check_show_tooltip,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (opt_check_show_tooltip);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_check), opt_check_show_tooltip, TRUE, TRUE, 0);
+
+  opt_check_raised_button = gtk_check_button_new_with_label (_("Плавающие кнопки"));
+  gtk_widget_ref (opt_check_raised_button);
+  gtk_object_set_data_full (GTK_OBJECT (opt_dialog), "opt_check_raised_button", opt_check_raised_button,
+                            (GtkDestroyNotify) gtk_widget_unref);
+  gtk_widget_show (opt_check_raised_button);
+  gtk_box_pack_start (GTK_BOX (opt_vbox_toolbar_check), opt_check_raised_button, TRUE, FALSE, 0);
+
     opt_label_gui = gtk_label_new (_("Интерфейс"));
     gtk_object_set_data (GTK_OBJECT (opt_dialog), "opt_label_gui", opt_label_gui);
     gtk_notebook_set_tab_label (GTK_NOTEBOOK (opt_notebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (opt_notebook), 0), opt_label_gui);
