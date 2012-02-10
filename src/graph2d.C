@@ -16,11 +16,19 @@
 #include <gdk_imlib.h>
 #include "interface.h"
 #include "callback.h"
+#include <locale.h>
+#include "intl.h"
 
 main (int argc, char *argv[])
 {
 
     GtkWidget *main_window;
+    
+    setlocale(LC_ALL,"");
+    bindtextdomain("graph2d", "/usr/local/share/locale");
+    textdomain("graph2d");
+    gtk_set_locale ();
+    
     gtk_init (&argc, &argv);
     gdk_imlib_init ();
 

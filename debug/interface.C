@@ -1,17 +1,8 @@
 #include "interface.h"
-#include "pixmaps/about.xpm"
-#include "pixmaps/open.xpm"
-#include "pixmaps/save.xpm"
-#include "pixmaps/pal.xpm"
-#include "pixmaps/zoomin.xpm"
-#include "pixmaps/zoomout.xpm"
-#include "pixmaps/elem.xpm"
-#include "pixmaps/knot.xpm"
-#include "pixmaps/setka.xpm"
-#include "pixmaps/epsilon.xpm"
-#include "pixmaps/sigma.xpm"
-#include "pixmaps/trech.xpm"
-
+#include "pixmaps.h"
+#include "intl.h"
+#include <stdlib.h>
+#include <string.h>
 GtkWidget *create_main_window (void)
 {
     GtkWidget *main_window;
@@ -44,11 +35,14 @@ GtkWidget *create_main_window (void)
     GtkWidget *button_n;
     GtkWidget *button_m;
 
+    chdir (getenv ("HOME"));
+
     accel_group = gtk_accel_group_new ();
 
     main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_default_size (GTK_WINDOW (main_window), 500, 400);
-    gtk_window_set_title (GTK_WINDOW (main_window), "Программа Graph2D");
+    gtk_window_set_title (GTK_WINDOW (main_window),
+			  _("Программа Graph2D"));
     gtk_signal_connect (GTK_OBJECT (main_window), "delete_event",
 			GTK_SIGNAL_FUNC (on_close_main_window), NULL);
     gtk_widget_show (main_window);
@@ -63,7 +57,7 @@ GtkWidget *create_main_window (void)
     gtk_box_pack_end (GTK_BOX (main_vbox), main_statusbar, FALSE, FALSE,
 		      0);
     gtk_statusbar_push (GTK_STATUSBAR (main_statusbar), 1,
-			"Добро пожаловать в Graph2D");
+			_("Добро пожаловать в Graph2D"));
     gtk_widget_show (main_statusbar);
 
     menu_handlebox = gtk_handle_box_new ();
@@ -75,14 +69,14 @@ GtkWidget *create_main_window (void)
     gtk_container_add (GTK_CONTAINER (menu_handlebox), menubar);
     gtk_widget_show (menubar);
 
-    item_menu = gtk_menu_item_new_with_label ("Файл");
+    item_menu = gtk_menu_item_new_with_label (_("Файл"));
     gtk_container_add (GTK_CONTAINER (menubar), item_menu);
     gtk_widget_show (item_menu);
 
     main_menu = gtk_menu_new ();
     gtk_menu_item_set_submenu (GTK_MENU_ITEM (item_menu), main_menu);
 
-    item = gtk_menu_item_new_with_label ("Открыть...");
+    item = gtk_menu_item_new_with_label (_("Открыть..."));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_add_accelerator (item, "activate", accel_group,
 				GDK_O, GDK_CONTROL_MASK,
@@ -91,7 +85,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_open_dialog), NULL);
     gtk_widget_show (item);
 
-    item = gtk_menu_item_new_with_label ("Сохранить");
+    item = gtk_menu_item_new_with_label (_("Сохранить"));
     gtk_object_set_data (GTK_OBJECT (main_window), "save", item);
     gtk_widget_set_sensitive (item, FALSE);
     gtk_widget_add_accelerator (item, "activate", accel_group,
@@ -102,7 +96,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_save_dialog), NULL);
     gtk_widget_show (item);
 
-    item = gtk_menu_item_new_with_label ("Сохранить как...");
+    item = gtk_menu_item_new_with_label (_("Сохранить как..."));
     gtk_object_set_data (GTK_OBJECT (main_window), "saveas", item);
     gtk_widget_set_sensitive (item, FALSE);
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -110,7 +104,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_saveas_dialog), NULL);
     gtk_widget_show (item);
 
-    item = gtk_menu_item_new_with_label ("Палитра...");
+    item = gtk_menu_item_new_with_label (_("Палитра..."));
     gtk_object_set_data (GTK_OBJECT (main_window), "pal", item);
     gtk_widget_set_sensitive (item, FALSE);
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -122,7 +116,7 @@ GtkWidget *create_main_window (void)
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_show (item);
 
-    item = gtk_menu_item_new_with_label ("Выход");
+    item = gtk_menu_item_new_with_label (_("Выход"));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_add_accelerator (item, "activate", accel_group,
 				GDK_Q, GDK_CONTROL_MASK,
@@ -131,7 +125,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_close_main_window), NULL);
     gtk_widget_show (item);
 
-    item_menu = gtk_menu_item_new_with_label ("Просмотр");
+    item_menu = gtk_menu_item_new_with_label (_("Просмотр"));
     gtk_object_set_data (GTK_OBJECT (main_window), "view", item_menu);
     gtk_widget_set_sensitive (item_menu, FALSE);
     gtk_container_add (GTK_CONTAINER (menubar), item_menu);
@@ -139,7 +133,7 @@ GtkWidget *create_main_window (void)
     main_menu = gtk_menu_new ();
     gtk_menu_item_set_submenu (GTK_MENU_ITEM (item_menu), main_menu);
 
-    item = gtk_menu_item_new_with_label ("Увеличить");
+    item = gtk_menu_item_new_with_label (_("Увеличить"));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_add_accelerator (item, "activate", accel_group,
 				GDK_equal, 0, GTK_ACCEL_VISIBLE);
@@ -147,7 +141,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_zoomin), NULL);
     gtk_widget_show (item);
 
-    item = gtk_menu_item_new_with_label ("Уменьшить");
+    item = gtk_menu_item_new_with_label (_("Уменьшить"));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_add_accelerator (item, "activate", accel_group,
 				GDK_minus, 0, GTK_ACCEL_VISIBLE);
@@ -159,7 +153,7 @@ GtkWidget *create_main_window (void)
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_show (item);
 
-    item = gtk_radio_menu_item_new_with_label (menugroup, "Сетка");
+    item = gtk_radio_menu_item_new_with_label (menugroup, _("Сетка"));
 
     menugroup = gtk_radio_menu_item_group (GTK_RADIO_MENU_ITEM (item));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -168,7 +162,7 @@ GtkWidget *create_main_window (void)
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_s", item);
     gtk_widget_show (item);
 
-    item = gtk_radio_menu_item_new_with_label (menugroup, "Дефорации");
+    item = gtk_radio_menu_item_new_with_label (menugroup, _("Дефорации"));
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_d", item);
     menugroup = gtk_radio_menu_item_group (GTK_RADIO_MENU_ITEM (item));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -176,7 +170,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_menu_def), NULL);
     gtk_widget_show (item);
 
-    item = gtk_radio_menu_item_new_with_label (menugroup, "Напряжения");
+    item = gtk_radio_menu_item_new_with_label (menugroup, _("Напряжения"));
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_n", item);
     menugroup = gtk_radio_menu_item_group (GTK_RADIO_MENU_ITEM (item));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -184,7 +178,7 @@ GtkWidget *create_main_window (void)
 			GTK_SIGNAL_FUNC (on_menu_nap), NULL);
     gtk_widget_show (item);
 
-    item = gtk_radio_menu_item_new_with_label (menugroup, "Поврежден.");
+    item = gtk_radio_menu_item_new_with_label (menugroup, _("Поврежден."));
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_m", item);
     menugroup = gtk_radio_menu_item_group (GTK_RADIO_MENU_ITEM (item));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
@@ -196,28 +190,35 @@ GtkWidget *create_main_window (void)
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_widget_show (item);
 
-    item = gtk_check_menu_item_new_with_label ("Элементы");
+    item = gtk_check_menu_item_new_with_label (_("Интерполяция"));
+    gtk_object_set_data (GTK_OBJECT (main_window), "menu_inter", item);
+    gtk_container_add (GTK_CONTAINER (main_menu), item);
+    gtk_signal_connect (GTK_OBJECT (item), "activate",
+			GTK_SIGNAL_FUNC (on_menu_inter), NULL);
+    gtk_widget_show (item);
+
+    item = gtk_check_menu_item_new_with_label (_("Элементы"));
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_elem", item);
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_signal_connect (GTK_OBJECT (item), "activate",
 			GTK_SIGNAL_FUNC (on_menu_elem), NULL);
     gtk_widget_show (item);
 
-    item = gtk_check_menu_item_new_with_label ("Узлы");
+    item = gtk_check_menu_item_new_with_label (_("Узлы"));
     gtk_object_set_data (GTK_OBJECT (main_window), "menu_knot", item);
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_signal_connect (GTK_OBJECT (item), "activate",
 			GTK_SIGNAL_FUNC (on_menu_knot), NULL);
     gtk_widget_show (item);
 
-    item_menu = gtk_menu_item_new_with_label ("Справка");
+    item_menu = gtk_menu_item_new_with_label (_("Справка"));
     gtk_container_add (GTK_CONTAINER (menubar), item_menu);
     gtk_menu_item_right_justify (GTK_MENU_ITEM (item_menu));
     gtk_widget_show (item_menu);
     main_menu = gtk_menu_new ();
     gtk_menu_item_set_submenu (GTK_MENU_ITEM (item_menu), main_menu);
 
-    item = gtk_menu_item_new_with_label ("О Программе");
+    item = gtk_menu_item_new_with_label (_("О Программе"));
     gtk_container_add (GTK_CONTAINER (main_menu), item);
     gtk_signal_connect (GTK_OBJECT (item), "activate",
 			GTK_SIGNAL_FUNC (on_about_dialog), NULL);
@@ -248,8 +249,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_BUTTON,
 					 NULL,
-					 "Открыть",
-					 "Открыть", NULL,
+					 _("Открыть"),
+					 _("Открыть"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_open_dialog),
 					 NULL);
@@ -265,8 +266,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_BUTTON,
 					 NULL,
-					 "Сохранить",
-					 "Сохранить", NULL,
+					 _("Сохранить"),
+					 _("Сохранить"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_save_dialog),
 					 NULL);
@@ -283,8 +284,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_BUTTON,
 					 NULL,
-					 "Палитра",
-					 "Палитра", NULL,
+					 _("Палитра"),
+					 _("Палитра"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_pal_dialog),
 					 NULL);
@@ -303,8 +304,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_BUTTON,
 					 NULL,
-					 "Увеличить",
-					 "Увеличить", NULL,
+					 _("Увеличить"),
+					 _("Увеличить"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_zoomin),
 					 NULL);
@@ -321,8 +322,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_BUTTON,
 					 NULL,
-					 "Уменьшить",
-					 "Уменьшить", NULL,
+					 _("Уменьшить"),
+					 _("Уменьшить"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_zoomout),
 					 NULL);
@@ -341,8 +342,8 @@ GtkWidget *create_main_window (void)
     button_s = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					   GTK_TOOLBAR_CHILD_RADIOBUTTON,
 					   NULL,
-					   "Сетка",
-					   "Сетка", NULL,
+					   _("Сетка"),
+					   _("Сетка"), NULL,
 					   tmp_toolbar_icon,
 					   GTK_SIGNAL_FUNC
 					   (on_button_setka), NULL);
@@ -360,8 +361,8 @@ GtkWidget *create_main_window (void)
     button_d = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					   GTK_TOOLBAR_CHILD_RADIOBUTTON,
 					   button_s,
-					   "Деформации",
-					   "Деформации", NULL,
+					   _("Деформации"),
+					   _("Деформации"), NULL,
 					   tmp_toolbar_icon,
 					   GTK_SIGNAL_FUNC (on_button_def),
 					   NULL);
@@ -379,8 +380,8 @@ GtkWidget *create_main_window (void)
     button_n = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					   GTK_TOOLBAR_CHILD_RADIOBUTTON,
 					   button_s,
-					   "Напряжения",
-					   "Напряжения", NULL,
+					   _("Напряжения"),
+					   _("Напряжения"), NULL,
 					   tmp_toolbar_icon,
 					   GTK_SIGNAL_FUNC (on_button_nap),
 					   NULL);
@@ -398,8 +399,8 @@ GtkWidget *create_main_window (void)
     button_m = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					   GTK_TOOLBAR_CHILD_RADIOBUTTON,
 					   button_s,
-					   "Поврежден.",
-					   "Поврежден.", NULL,
+					   _("Поврежден."),
+					   _("Поврежден."), NULL,
 					   tmp_toolbar_icon,
 					   GTK_SIGNAL_FUNC (on_button_mtr),
 					   NULL);
@@ -419,8 +420,8 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_TOGGLEBUTTON,
 					 NULL,
-					 "Элементы",
-					 "Элементы", NULL,
+					 _("Элементы"),
+					 _("Элементы"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_button_elem),
 					 NULL);
@@ -437,12 +438,30 @@ GtkWidget *create_main_window (void)
     button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
 					 GTK_TOOLBAR_CHILD_TOGGLEBUTTON,
 					 NULL,
-					 "Узлы",
-					 "Узлы", NULL,
+					 _("Узлы"),
+					 _("Узлы"), NULL,
 					 tmp_toolbar_icon,
 					 GTK_SIGNAL_FUNC (on_button_knot),
 					 NULL);
     gtk_object_set_data (GTK_OBJECT (main_window), "button_knot", button);
+    gtk_widget_set_sensitive (button, FALSE);
+    gtk_widget_show (button);
+
+    pixmap = gdk_pixmap_create_from_xpm_d (main_window->window, &mask,
+					   &style->bg[GTK_STATE_NORMAL],
+					   (gchar **) inter_xpm);
+    tmp_toolbar_icon = gtk_pixmap_new (pixmap, mask);
+    gdk_pixmap_unref (pixmap);
+    gdk_bitmap_unref (mask);
+    button = gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
+					 GTK_TOOLBAR_CHILD_TOGGLEBUTTON,
+					 NULL,
+					 _("Интерполяция"),
+					 _("Интерполяция"), NULL,
+					 tmp_toolbar_icon,
+					 GTK_SIGNAL_FUNC (on_button_inter),
+					 NULL);
+    gtk_object_set_data (GTK_OBJECT (main_window), "button_inter", button);
     gtk_widget_set_sensitive (button, FALSE);
     gtk_widget_show (button);
 
@@ -484,10 +503,41 @@ GtkWidget *create_about_dialog (void)
     GdkBitmap *mask;
     GdkPixmap *about_pixmap;
     GtkStyle *style;
+    
+    static GdkGC *gc = NULL;
+    int PixmapHeight=0;
+    int PixmapWidth=0;
+    int i,j,len;
+    int n=0;
+    char *buf1 = NULL;
+    char *buf2 = NULL;
+    char *buf3 = NULL;
+    int n_comments=-1;
+    char *Title = "Graph 2D 0.3.6";
+    char *Copyright = "Copyright 2001 Rodionov Andrey";
+    char *Authors = "Автор: Родионов Андрей";
+    char *Comments =
+	"Программа предназначена для графического представления результатов численного моделирования методом конечных элементов";
+    
+    GdkFont *fontTitle =
+	gdk_font_load
+	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
+    
+    GdkFont *fontCopyright =
+	gdk_font_load
+	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
+    
+    GdkFont *fontAuthors =
+	gdk_font_load
+	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
+	
+    GdkFont *fontComments =
+	gdk_font_load
+	("-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*");
 
     about_dialog = gtk_dialog_new ();
-    gtk_window_set_title (GTK_WINDOW (about_dialog), "О Программе");
-    gtk_widget_set_usize (GTK_WIDGET (about_dialog), 300, 200);
+    gtk_window_set_title (GTK_WINDOW (about_dialog), _("О Программе"));
+    //gtk_widget_set_usize (GTK_WIDGET (about_dialog), 300, 200);
     gtk_window_set_policy (GTK_WINDOW (about_dialog), FALSE, FALSE, FALSE);
     gtk_widget_show (about_dialog);
 
@@ -496,25 +546,107 @@ GtkWidget *create_about_dialog (void)
     gtk_widget_show (about_vbox);
 
     about_frame = gtk_frame_new (NULL);
-    gtk_container_set_border_width (GTK_CONTAINER (about_frame), 10);
+    gtk_container_set_border_width (GTK_CONTAINER (about_frame), 7);
     gtk_box_pack_start (GTK_BOX (about_vbox), about_frame, TRUE, TRUE, 0);
     gtk_widget_show (about_frame);
 
+//------------------------------------------------------------------------
+    
+    PixmapWidth = gdk_string_width (fontTitle, Title)+20;
+    PixmapHeight = gdk_string_height (fontTitle, Title);
+    
+    if (PixmapWidth < gdk_string_width (fontCopyright,Copyright)+10)
+        PixmapWidth = gdk_string_width (fontCopyright,Copyright)+10;
+    PixmapHeight =PixmapHeight + gdk_string_height (fontCopyright,Copyright); 
+    
+    if (PixmapWidth < gdk_string_width (fontAuthors,Authors)+10)
+        PixmapWidth = gdk_string_width (fontAuthors,Authors)+10;
+    PixmapHeight =PixmapHeight + gdk_string_height (fontAuthors,Authors);
+    
+    for (i=0;i<strlen(Comments);i++)
+    {
+	 
+         if (buf1!=NULL)
+	 {
+	     len=strlen(buf1)+1;
+	     if (buf2!=NULL)
+	       delete(buf2);
+	     buf2=new char[len-1];
+	     for(j=0;j<len;j++)
+	         buf2[j]=buf1[j];
+	     delete(buf1);
+	 }
+	 else
+	   len=1;
+	   
+	 buf1 = new char[len+1];
+	 buf1[len] = *"\0";
+	 
+	 for (j=0;j<len-1;j++)
+	    buf1[j]=buf2[j];
+	 buf1[len-1] = Comments[i];
+	 
+       if ((Comments[i] == *" ")||((i+1)==strlen(Comments)))
+       {
+	 if (((gdk_string_width(fontComments,buf1)+10)>PixmapWidth)
+	     ||((i+1)==strlen(Comments)))
+         {
+	    n_comments++;
+	    if ((i+1)!=strlen(Comments))
+	    {
+	        len=strlen(buf1)-(i-n)-1;
+		i=n;
+	    }
+	    else
+	        len=strlen(buf1)+1;
+		
+	    buf3 = new char[len];
+	    buf3[len] = *"\0";
+	    
+	    for (j=0;j<len;j++)
+	        buf3[j]=buf1[j];
+	    
+	    PixmapHeight=PixmapHeight+gdk_string_height(fontComments,buf3);
+	    
+	//    g_print(buf3);
+	//    g_print("\n");
+	    delete(buf3);
+	    delete(buf1);
+	    buf1=NULL;
+	    delete(buf2);
+	    buf2=NULL;
+	    
+         }
+	 n=i;
+       }
+    }  
     style = gtk_widget_get_style (about_dialog);
-    about_pixmap =
-	gdk_pixmap_create_from_xpm_d (about_dialog->window, &mask,
-				      &style->bg[GTK_STATE_NORMAL],
-				      (gchar **) about_xpm);
+    /*about_pixmap =
+	gdk_pixmap_new (about_dialog->window,PixmapWidth,PixmapHeight,
+	                -1);
     about_pixmapwid = gtk_pixmap_new (about_pixmap, mask);
+    gdk_pixmap_unref(about_pixmap);
     gtk_widget_show (about_pixmapwid);
     gtk_container_add (GTK_CONTAINER (about_frame), about_pixmapwid);
-    gtk_widget_show (about_pixmapwid);
+    gtk_widget_show (about_pixmapwid);*/
+    gtk_widget_set_usize (GTK_WIDGET (about_frame),PixmapWidth,PixmapHeight);
+    //GTK_WIDGET (about_frame)->window;
+    //GTK_WIDGET (about_frame)->style->black;
+    //GTK_WIDGET (about_frame)t->style->white;
+    GdkWindow *win = GTK_WIDGET(about_frame)->window;
+    if (gc == NULL)
+		gc = gdk_gc_new (win);
+    gdk_gc_set_foreground (gc,&(GTK_WIDGET(about_frame)->style->black));
+    gdk_gc_set_background (gc,&(GTK_WIDGET (about_frame)->style->black));
+    gdk_draw_rectangle (GTK_WIDGET (about_frame)->window,gc,
+			TRUE,3,3,PixmapWidth,PixmapHeight);
+//------------------------------------------------------------------------
 
     about_action_area = GTK_DIALOG (about_dialog)->action_area;
     gtk_widget_show (about_action_area);
     gtk_container_set_border_width (GTK_CONTAINER (about_action_area), 5);
 
-    about_button = gtk_button_new_with_label ("  OK  ");
+    about_button = gtk_button_new_with_label (_("  OK  "));
     gtk_box_pack_end (GTK_BOX (about_action_area), about_button, FALSE,
 		      FALSE, 0);
     GTK_WIDGET_SET_FLAGS (about_button, GTK_CAN_DEFAULT);
@@ -532,7 +664,9 @@ GtkWidget *create_open_dialog (void)
     GtkWidget *ok_button;
     GtkWidget *cancel_button;
 
-    open_dialog = gtk_file_selection_new ("Открытие");
+
+
+    open_dialog = gtk_file_selection_new (_("Открытие"));
     gtk_container_set_border_width (GTK_CONTAINER (open_dialog), 10);
 
     ok_button = GTK_FILE_SELECTION (open_dialog)->ok_button;
@@ -559,7 +693,7 @@ GtkWidget *create_save_dialog (void)
     GtkWidget *ok_button;
     GtkWidget *cancel_button;
 
-    save_dialog = gtk_file_selection_new ("Сохранение");
+    save_dialog = gtk_file_selection_new (_("Сохранение"));
     gtk_container_set_border_width (GTK_CONTAINER (save_dialog), 10);
 
     ok_button = GTK_FILE_SELECTION (save_dialog)->ok_button;
@@ -586,7 +720,9 @@ GtkWidget *create_pal_dialog (void)
     GtkWidget *ok_button;
     GtkWidget *cancel_button;
 
-    open_dialog = gtk_file_selection_new ("Открытие");
+    chdir ("/usr/local/share/graph2d/palettes");
+
+    open_dialog = gtk_file_selection_new (_("Открытие"));
     gtk_container_set_border_width (GTK_CONTAINER (open_dialog), 10);
 
     ok_button = GTK_FILE_SELECTION (open_dialog)->ok_button;

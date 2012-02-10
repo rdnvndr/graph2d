@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-// #include "delem.h"
 
 GtkWidget *create_main_window (void);
 GtkWidget *create_about_dialog (void);

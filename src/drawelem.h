@@ -48,4 +48,5 @@ void drawelem_show_nelem (void);
 void drawelem_show_nknot (void);
 void draw_nknot (DrawElem * det);
 void draw_nelem (DrawElem * det);
+void drawelem_inter (void);
 #endif

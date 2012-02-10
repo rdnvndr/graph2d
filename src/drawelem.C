@@ -1,6 +1,5 @@
 #include "drawelem.h"
 #include "colormap.h"
-
 GdkColor *color_pal = NULL;
 int ncolor_pal = 0;
 int sdn = 0;
@@ -9,12 +8,25 @@ int sknot = 0;
 static void drawelem_class_init (DrawElemClass * klass);
 static void drawelem_init (DrawElem * det);
 
+// Нужно для интерполяции
+float *nds_knot;
+int *nds_knotn;
+int sinter = 0;
+
 void drawelem_show_nelem (void)
 {
     if (selem == 0)
 	selem = 1;
     else
 	selem = 0;
+}
+
+void drawelem_inter (void)
+{
+    if (sinter == 0)
+	sinter = 1;
+    else
+	sinter = 0;
 }
 
 void drawelem_show_nknot (void)
@@ -78,6 +90,49 @@ char *float_to_char (float n)
 	}
     }
     return (st);
+}
+
+float area_triangle (float x1, float y1, float x2, float y2, float x3,
+		     float y3)
+{
+    float s = (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2;
+    if (s < 0)
+	s = s * (-1);
+    return (s);
+}
+
+float len (float x1, float y1, float x2, float y2)
+{
+    return (sqrt ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)));
+}
+
+float koef (float x1, float y1, float x2, float y2, float x3, float y3,
+	    float x4, float y4)
+{
+    float b1, c1, b2, c2, x, y;
+
+    if ((x1 - x2) != 0)
+	b1 = (y1 - y2) / (x1 - x2);
+    else
+	b1 = (y1 - y2) / (0.0000001);
+    c1 = y1 - b1 * x1;
+
+    if ((x3 - x4) != 0)
+	b2 = (y3 - y4) / (x3 - x4);
+    else
+	b2 = (y3 - y4) / (0.0000001);
+    c2 = y3 - b2 * x3;
+
+    if ((b1 - b2) != 0)
+	x = (c2 - c1) / (b1 - b2);
+    else
+	x = (c2 - c1) / (0.0000001);
+    y = b1 * x + c1;
+
+    if (len (x2, y2, x, y) != 0)
+	return (len (x1, y1, x, y) / len (x2, y2, x, y));
+    else
+	return (len (x1, y1, x, y) / 0.0000001);
 }
 
 void drawelem_size (DrawElem * de, gint width, gint height)
@@ -238,7 +293,11 @@ void drawelem_show_elem (DrawElem * det)
     int colline;
     int width, height;
     char *text = NULL;
-
+    // Переменные для интерполяции
+    int max_Y, min_Y, k, max_X, min_X, l, m, n, j;
+    float S1, S2, nd;
+    float kx[3];
+    
     colormap = gdk_colormap_get_system ();
 
     if (color_pal == NULL)
@@ -262,38 +321,182 @@ void drawelem_show_elem (DrawElem * det)
     /* Вывод сетки или заливка заготовки */
     for (i = 0; i < det->nelem; i++) {
 	if (sdn != 0) {
-	    num = int ((det->nds[i] - minn) / inter);
-	    if ((inter * num) > (det->nds[i] - minn))
-		num--;
-	    if (color_pal == NULL)
-		colorgc =
-		    color_to_gc (GTK_WIDGET (det), &default_color[num],
-				 colormap);
-	    else
-		colorgc =
-		    color_to_gc (GTK_WIDGET (det), &color_pal[num],
-				 colormap);
+	    if (sinter == 0) {
+		num = int ((det->nds[i] - minn) / inter);
+		if ((inter * num) > (det->nds[i] - minn))
+		    num--;
+		if (color_pal == NULL)
+		    colorgc =
+			color_to_gc (GTK_WIDGET (det), &default_color[num],
+				     colormap);
+		else
+		    colorgc =
+			color_to_gc (GTK_WIDGET (det), &color_pal[num],
+				     colormap);
 
-	    draw_triangle (det->pixmap, colorgc, TRUE,
-			   int (det->mash *
-				det->knot_x[det->elem[0][i] - 1]) +
-			   det->zero_x,
-			   -int (det->mash *
-				 det->knot_y[det->elem[0][i] - 1]) +
-			   det->zero_y,
-			   int (det->mash *
-				det->knot_x[det->elem[1][i] - 1]) +
-			   det->zero_x,
-			   -int (det->mash *
-				 det->knot_y[det->elem[1][i] - 1]) +
-			   det->zero_y,
-			   int (det->mash *
-				det->knot_x[det->elem[2][i] - 1]) +
-			   det->zero_x,
-			   -int (det->mash *
-				 det->knot_y[det->elem[2][i] - 1]) +
-			   det->zero_y);
-	    gdk_gc_unref (colorgc);
+		draw_triangle (det->pixmap, colorgc, TRUE,
+			       int (det->mash *
+				    det->knot_x[det->elem[0][i] - 1]) +
+			       det->zero_x,
+			       -int (det->mash *
+				     det->knot_y[det->elem[0][i] - 1]) +
+			       det->zero_y,
+			       int (det->mash *
+				    det->knot_x[det->elem[1][i] - 1]) +
+			       det->zero_x,
+			       -int (det->mash *
+				     det->knot_y[det->elem[1][i] - 1]) +
+			       det->zero_y,
+			       int (det->mash *
+				    det->knot_x[det->elem[2][i] - 1]) +
+			       det->zero_x,
+			       -int (det->mash *
+				     det->knot_y[det->elem[2][i] - 1]) +
+			       det->zero_y);
+		gdk_gc_unref (colorgc);
+	    } else {
+
+		max_Y = int (det->knot_y[det->elem[0][i] - 1] * det->mash);
+		min_Y = int (det->knot_y[det->elem[0][i] - 1] * det->mash);
+		max_X = int (det->knot_x[det->elem[0][i] - 1] * det->mash);
+		min_X = int (det->knot_x[det->elem[0][i] - 1] * det->mash);
+
+		for (j = 1; j < 3; j++) {
+		    if (int (det->knot_y[det->elem[j][i] - 1] * det->mash)
+			> max_Y)
+			max_Y =
+			    int (det->knot_y[det->elem[j][i] - 1] *
+				 det->mash);
+		    if (int (det->knot_y[det->elem[j][i] - 1] * det->mash)
+			< min_Y)
+			min_Y =
+			    int (det->knot_y[det->elem[j][i] - 1] *
+				 det->mash);
+
+		    if (int (det->knot_x[det->elem[j][i] - 1] * det->mash)
+			> max_X)
+			max_X =
+			    int (det->knot_x[det->elem[j][i] - 1] *
+				 det->mash);
+		    if (int (det->knot_x[det->elem[j][i] - 1] * det->mash)
+			< min_X)
+			min_X =
+			    int (det->knot_x[det->elem[j][i] - 1] *
+				 det->mash);
+		}
+
+		for (j = min_Y; j <= max_Y; j++)
+		    for (k = min_X; k <= max_X; k++) {
+			S1 =
+			    area_triangle (
+					   (det->
+					    knot_x[det->elem[0][i] -
+						   1] * det->mash),
+					   (det->
+					    knot_y[det->elem[0][i] -
+						   1] * det->mash),
+					   (det->
+					    knot_x[det->elem[1][i] -
+						   1] * det->mash),
+					   (det->
+					    knot_y[det->elem[1][i] -
+						   1] * det->mash),
+					   (det->
+					    knot_x[det->elem[2][i] -
+						   1] * det->mash),
+					   (det->
+					    knot_y[det->elem[2][i] -
+						   1] * det->mash));
+			S2 = 0;
+			for (l = 0; l < 3; l++) {
+			    m = l + 1;
+			    if (m > 2)
+				m = 0;
+			    S2 =
+				S2 +
+				area_triangle (
+					       (det->
+						knot_x[det->elem[l][i] -
+						       1] * det->mash),
+					       (det->
+						knot_y[det->elem[l][i] -
+						       1] * det->mash),
+					       (det->
+						knot_x[det->elem[m][i] -
+						       1] * det->mash),
+					       (det->
+						knot_y[det->elem[m][i] -
+						       1] * det->mash), k,
+					       j);
+
+			}
+
+			nd = S2 - S1;
+			if (nd < 0)
+			    nd = nd * (-1);
+
+			if (nd < 0.3) {
+
+			    for (l = 0; l < 3; l++) {
+				m = l + 1;
+				n = m + 1;
+
+				if (m > 2)
+				    m = m - 3;
+				if (n > 2)
+				    n = n - 3;
+
+				kx[l] = koef (k, j,
+					      (det->
+					       knot_x[det->elem[l][i] -
+						      1] * det->mash),
+					      (det->
+					       knot_y[det->elem[l][i] -
+						      1] * det->mash),
+					      (det->
+					       knot_x[det->elem[m][i] -
+						      1] * det->mash),
+					      (det->
+					       knot_y[det->elem[m][i] -
+						      1] * det->mash),
+					      (det->
+					       knot_x[det->elem[n][i] -
+						      1] * det->mash),
+					      (det->
+					       knot_y[det->elem[n][i] -
+						      1] * det->mash));
+			    }
+
+			    nd = 0;
+
+			    for (l = 0; l < 3; l++)
+				nd =
+				    nd + kx[l] * nds_knot[det->elem[l][i] -
+							  1];
+
+			    num = int ((nd - minn) / inter);
+
+			    if ((inter * num) > (nd - minn))
+				num--;
+			    if (color_pal == NULL)
+				colorgc =
+				    color_to_gc (GTK_WIDGET (det),
+						 &default_color[num],
+						 colormap);
+			    else
+				colorgc =
+				    color_to_gc (GTK_WIDGET (det),
+						 &color_pal[num],
+						 colormap);
+
+			    gdk_draw_point (det->pixmap, colorgc,
+					    k + det->zero_x,
+					    -j + det->zero_y);
+
+			    gdk_gc_unref (colorgc);
+			}
+		    }
+	    }
 	} else
 	    draw_triangle (det->pixmap, GTK_WIDGET (det)->style->black_gc,
 			   FALSE,
@@ -441,9 +644,18 @@ void load_knot (DrawElem * det, char *path)
     FILE *fd;
     float tmp;
     int nuz, n, i;
+    char s[80];
 
+    nuz = 0;
     fd = fopen (path, "r");
-    fscanf (fd, "%d", &nuz);
+    while (!feof (fd)) {
+	i = fscanf (fd, "%d %f %f %f", &n, &tmp, &tmp, &tmp);
+	if (i == 4)
+	    nuz++;
+	else
+	    fgets (s, 80, fd);
+    }
+    fclose (fd);
 
     if (det->knot_x != NULL)
 	delete (det->knot_x);
@@ -453,12 +665,19 @@ void load_knot (DrawElem * det, char *path)
     det->knot_x = new float[nuz];
     det->knot_y = new float[nuz];
 
-    for (i = 0; i < nuz; i++)
-	fscanf (fd, "%d %f %f %f", &n, &det->knot_x[i], &det->knot_y[i],
-		&tmp);
+    nuz = 0;
+    fd = fopen (path, "r");
 
+    while (!feof (fd)) {
+	i =
+	    fscanf (fd, "%d %f %f %f", &n, &det->knot_x[nuz],
+		    &det->knot_y[nuz], &tmp);
+	if (i == 4)
+	    nuz++;
+	else
+	    fgets (s, 80, fd);
+    }
     fclose (fd);
-
 
     det->nknot = nuz;
     return;
@@ -500,17 +719,19 @@ void load_elem (DrawElem * det, char *path)
     FILE *fd;
     int n, i;
     int nelem;
-
+    char s[80];
     fd = fopen (path, "r");
     //fscanf (fd, "%d", &nelem);
-    
+
     nelem = 0;
     while (!feof (fd)) {
-	if (fscanf(fd, "%d %d %d %d", &n,&n ,&n,&n)==4)
-	     nelem++;
+	if (fscanf (fd, "%d %d %d %d", &n, &n, &n, &n) == 4)
+	    nelem++;
+	else
+	    fgets (s, 80, fd);
     }
-    fclose(fd);
-    
+    fclose (fd);
+
     for (i = 0; i < 3; i++)
 	if (det->elem[i] != NULL)
 	    delete (det->elem[i]);
@@ -522,13 +743,14 @@ void load_elem (DrawElem * det, char *path)
     fd = fopen (path, "r");
     while (!feof (fd)) {
 	if (fscanf
-	    (fd, "%d %d %d %d", &n, &det->elem[0][nelem], &det->elem[1][nelem],
-	     &det->elem[2][i]) == 4)
-        	    nelem++;
+	    (fd, "%d %d %d %d", &n, &det->elem[0][nelem],
+	     &det->elem[1][nelem], &det->elem[2][nelem]) == 4)
+	    nelem++;
+	else
+	    fgets (s, 80, fd);
     }
     fclose (fd);
-    if (nelem==177) g_print("--------------------");
-    
+
     det->nelem = nelem;
     return;
 }
@@ -538,22 +760,67 @@ void drawelem_load_nds (DrawElem * det, char *path)
     FILE *fd;
     int n, i;
     int nelem;
+    float tmp;
+    char s[80];
 
     fd = fopen (path, "r");
-    fscanf (fd, "%d", &nelem);
+    nelem = 0;
+    while (!feof (fd)) {
+	if (sdn == 3)
+	    if (fscanf (fd, "%f", &tmp) == 1)
+		nelem++;
+	    else
+		fgets (s, 80, fd);
+	else if (fscanf (fd, "%d %f", &n, &tmp) == 2)
+	    nelem++;
+	else
+	    fgets (s, 80, fd);
+    }
+    fclose (fd);
 
     if (det->nds != NULL)
 	delete (det->nds);
 
     det->nds = new float[nelem];
 
-    for (int i = 0; i < nelem; i++) {
+    fd = fopen (path, "r");
+    nelem = 0;
+    while (!feof (fd)) {
 	if (sdn == 3)
-	    fscanf (fd, "%f", &det->nds[i]);
+	    if (fscanf (fd, "%f", &det->nds[nelem]) == 1)
+		nelem++;
+	    else
+		fgets (s, 80, fd);
+	else if (fscanf (fd, "%d %f", &n, &det->nds[nelem]) == 2)
+	    nelem++;
 	else
-	    fscanf (fd, "%d %f", &n, &det->nds[i]);
+	    fgets (s, 80, fd);
     }
     fclose (fd);
+
+    // Нужно для интерполяции
+    if (nds_knot != NULL)
+	delete (nds_knot);
+    nds_knot = new float[det->nknot];
+
+    if (nds_knotn != NULL)
+	delete (nds_knotn);
+    nds_knotn = new int[det->nknot];
+    for (i = 0; i < (det->nknot); i++) {
+	nds_knotn[i] = 0;
+	nds_knot[i] = 0;
+    }
+
+    for (i = 0; i < (det->nelem); i++)
+	for (n = 0; n < 3; n++) {
+	    nds_knot[det->elem[n][i]-1] =
+		det->nds[i] + nds_knot[det->elem[n][i]-1];
+	    nds_knotn[det->elem[n][i]-1]++;
+	}
+
+    for (i = 0; i < (det->nknot); i++)
+	nds_knot[i] = nds_knot[i] / nds_knotn[i];
+
     return;
 }
 
@@ -588,6 +855,7 @@ void drawelem_load_all (DrawElem * det, char *path)
 	drawelem_load_nds (det, "ntg.poc");
     drawelem_fit (det);
 }
+
 void drawelem_save (DrawElem * det, char *path)
 {
     GdkImlibImage *image;
@@ -646,4 +914,3 @@ GtkWidget *drawelem_new (void)
 {
     return GTK_WIDGET (gtk_type_new (drawelem_get_type ()));
 }
-

@@ -1,4 +1,7 @@
 #include "callback.h"
+#include "intl.h"
+static char *dirname = NULL;
+
 char *savename = "";
 GtkWidget *lookup_widget (GtkWidget * widget, const gchar * widget_name)
 {
@@ -46,7 +49,10 @@ void on_open_dialog (GtkWidget * widget, gpointer Data)
     GtkWidget *drawelem;
 
     drawelem = lookup_widget (widget, "drawelem");
-
+    
+    if (dirname!=NULL)
+       chdir(dirname);
+    
     opendialog = create_open_dialog ();
 
     gtk_object_set_data (GTK_OBJECT (opendialog), "drawelem", drawelem);
@@ -63,10 +69,9 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
     GtkWidget *button;
     GtkWidget *menuitem;
     static char *filename = NULL;
-    static char *dirname = NULL;
+    
     int i, j;
-
-
+    
     filesel = gtk_widget_get_toplevel (GTK_WIDGET (widget));
     gtk_widget_hide (filesel);
 
@@ -76,7 +81,9 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
 	if (filename[i] == *"/")
 	    break;
     i++;
-
+    
+    if (dirname==NULL)
+       delete(dirname);
     dirname = new char[i];
 
     for (j = 0; j < i; j++)
@@ -131,6 +138,9 @@ void on_open_dialog_ok (GtkWidget * widget, gpointer Data)
     gtk_widget_set_sensitive (button, TRUE);
 
     button = lookup_widget (menuitem, "button_knot");
+    gtk_widget_set_sensitive (button, TRUE);
+    
+    button = lookup_widget (menuitem, "button_inter");
     gtk_widget_set_sensitive (button, TRUE);
 }
 
@@ -251,7 +261,6 @@ void on_pal_dialog_ok (GtkWidget * widget, gpointer Data)
     static char *filename = NULL;
     int i, j;
 
-
     filesel = gtk_widget_get_toplevel (GTK_WIDGET (widget));
     gtk_widget_hide (filesel);
 
@@ -274,7 +283,7 @@ void on_setka (GtkWidget * widget, gpointer Data)
 
     status_bar = lookup_widget (widget, "statusbar");
     gtk_statusbar_push (GTK_STATUSBAR (status_bar), 1,
-			"Просмотр элементов");
+			_("Просмотр элементов"));
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (0);
@@ -289,10 +298,12 @@ void on_nap (GtkWidget * widget, gpointer Data)
 
     status_bar = lookup_widget (widget, "statusbar");
     gtk_statusbar_push (GTK_STATUSBAR (status_bar), 1,
-			"Просмотр напряжений");
+			_("Просмотр напряжений"));
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (1);
+    if (dirname!=NULL)
+       chdir(dirname);
     drawelem_load_nds (DRAWELEM (draw), "sg_na.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -305,10 +316,12 @@ void on_def (GtkWidget * widget, gpointer Data)
 
     status_bar = lookup_widget (widget, "statusbar");
     gtk_statusbar_push (GTK_STATUSBAR (status_bar), 1,
-			"Просмотр деформаций");
+			_("Просмотр деформаций"));
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (2);
+    if (dirname!=NULL)
+       chdir(dirname);
     drawelem_load_nds (DRAWELEM (draw), "na_df.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -321,10 +334,12 @@ void on_mtr (GtkWidget * widget, gpointer Data)
 
     status_bar = lookup_widget (widget, "statusbar");
     gtk_statusbar_push (GTK_STATUSBAR (status_bar), 1,
-			"Просмотр микротрещин");
+			_("Просмотр микротрещин"));
 
     draw = lookup_widget (widget, "drawelem");
     drawelem_set (3);
+    if (dirname!=NULL)
+       chdir(dirname);
     drawelem_load_nds (DRAWELEM (draw), "ntg.poc");
     drawelem_fit (DRAWELEM (draw));
 
@@ -347,6 +362,16 @@ void on_knot (GtkWidget * widget, gpointer Data)
     drawelem_show_nknot ();
     drawelem_fit (DRAWELEM (draw));
 }
+
+void on_inter (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *draw;
+
+    draw = lookup_widget (widget, "drawelem");
+    drawelem_inter ();
+    drawelem_fit (DRAWELEM (draw));
+}
+
 
 void on_menu_setka (GtkWidget * widget, gpointer Data)
 {
@@ -544,4 +569,46 @@ void on_button_knot (GtkWidget * widget, gpointer Data)
     }
 }
 
+void on_menu_inter (GtkWidget * widget, gpointer Data)
+{
+
+    GtkWidget *button;
+    button = lookup_widget (widget, "button_inter");
+    if (GTK_CHECK_MENU_ITEM (widget)->active == TRUE) {
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)) ==
+	    FALSE) {
+	    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button),
+					  TRUE);
+	    return;
+	}
+	on_inter (widget, Data);
+    } else {
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)) ==
+	    TRUE) {
+	    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button),
+					  FALSE);
+	    return;
+	}
+	on_inter (widget, Data);
+    }
+}
+
+void on_button_inter (GtkWidget * widget, gpointer Data)
+{
+    GtkWidget *item;
+    item = lookup_widget (widget, "menu_inter");
+    if (GTK_TOGGLE_BUTTON (widget)->active == TRUE) {
+	if (GTK_CHECK_MENU_ITEM (item)->active == FALSE) {
+	    gtk_menu_item_activate (GTK_MENU_ITEM (item));
+	    return;
+	}
+	on_inter (widget, Data);
+    } else {
+	if (GTK_CHECK_MENU_ITEM (item)->active == TRUE) {
+	    gtk_menu_item_activate (GTK_MENU_ITEM (item));
+	    return;
+	}
+	on_inter (widget, Data);
+    }
+}
 

@@ -31,6 +31,7 @@ void on_def (GtkWidget * widget, gpointer Data);
 
 void on_elem (GtkWidget * widget, gpointer Data);
 void on_knot (GtkWidget * widget, gpointer Data);
+void on_inter (GtkWidget * widget, gpointer Data);
 
 void on_menu_setka (GtkWidget * widget, gpointer Data);
 void on_button_setka (GtkWidget * widget, gpointer Data);
@@ -46,4 +47,7 @@ void on_button_elem (GtkWidget * widget, gpointer Data);
 
 void on_menu_knot (GtkWidget * widget, gpointer Data);
 void on_button_knot (GtkWidget * widget, gpointer Data);
+
+void on_menu_inter (GtkWidget * widget, gpointer Data);
+void on_button_inter (GtkWidget * widget, gpointer Data);
 #endif

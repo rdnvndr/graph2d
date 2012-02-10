@@ -1,9 +1,30 @@
-GTK_LIBS = -L/usr/lib -L/usr/X11R6/lib -lgtk -lgdk -rdynamic -lgmodule \
-           -lglib -ldl -lXi -lXext -lX11 -lm -lgdk_imlib 
-OBJECTS  = graph2d.o interface.o callback.o drawelem.o
-CFLAGS   =-I/usr/lib/glib/include -I/usr/X11R6/include
-CC=g++ 
-All: $(OBJECTS)	
-	$(CC) -o graph2d  $(GTK_LIBS) $(OBJECTS)
-clean:
-	rm -f *.o graph2d
+
+All: base nls
+
+clean: clean-base clean-nls
+
+install: install-base install-pal install-nls 
+
+
+base:
+	@$(MAKE) -C src All
+
+nls:
+	@$(MAKE) -C po all
+
+clean-base:
+	@$(MAKE) -C src clean
+
+clean-nls:
+	@$(MAKE) -C po clean
+
+install-base:
+	@$(MAKE) -C src install
+
+install-nls:
+	@$(MAKE) -C po install
+
+install-pal:
+	mkdir /usr/local/share/graph2d
+	mkdir /usr/local/share/graph2d/palettes
+	cp palettes/*.pal /usr/local/share/graph2d/palettes
