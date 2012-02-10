@@ -92,10 +92,10 @@ static gint configure_event (GtkWidget * widget, GdkEventConfigure * event)
 	if (DRAWELEM (widget)->pixmap != NULL)
 	    gdk_pixmap_unref (DRAWELEM (widget)->pixmap);
 	DRAWELEM (widget)->pixmap = gdk_pixmap_new (widget->window,
-						    widget->allocation.
-						    width,
-						    widget->allocation.
-						    height, -1);
+						    widget->
+						    allocation.width,
+						    widget->
+						    allocation.height, -1);
 
 	gdk_draw_rectangle (DRAWELEM (widget)->pixmap,
 			    widget->style->white_gc,
@@ -441,18 +441,9 @@ void load_knot (DrawElem * det, char *path)
     FILE *fd;
     float tmp;
     int nuz, n, i;
-    char s[80];
 
-    nuz = 0;
     fd = fopen (path, "r");
-    while (!feof (fd)) {
-	i = fscanf (fd, "%d %f %f %f", &n, &tmp, &tmp, &tmp);
-	if (i == 4)
-	    nuz++;
-	else
-	    fgets (s, 80, fd);
-    }
-    fclose (fd);
+    fscanf (fd, "%d", &nuz);
 
     if (det->knot_x != NULL)
 	delete (det->knot_x);
@@ -462,19 +453,12 @@ void load_knot (DrawElem * det, char *path)
     det->knot_x = new float[nuz];
     det->knot_y = new float[nuz];
 
-    nuz = 0;
-    fd = fopen (path, "r");
+    for (i = 0; i < nuz; i++)
+	fscanf (fd, "%d %f %f %f", &n, &det->knot_x[i], &det->knot_y[i],
+		&tmp);
 
-    while (!feof (fd)) {
-	i =
-	    fscanf (fd, "%d %f %f %f", &n, &det->knot_x[nuz],
-		    &det->knot_y[nuz], &tmp);
-	if (i == 4)
-	    nuz++;
-	else
-	    fgets (s, 80, fd);
-    }
     fclose (fd);
+
 
     det->nknot = nuz;
     return;
@@ -516,19 +500,17 @@ void load_elem (DrawElem * det, char *path)
     FILE *fd;
     int n, i;
     int nelem;
-    char s[80];
+
     fd = fopen (path, "r");
     //fscanf (fd, "%d", &nelem);
-
+    
     nelem = 0;
     while (!feof (fd)) {
-	if (fscanf (fd, "%d %d %d %d", &n, &n, &n, &n) == 4)
-	    nelem++;
-	else
-	    fgets (s, 80, fd);
+	if (fscanf(fd, "%d %d %d %d", &n,&n ,&n,&n)==4)
+	     nelem++;
     }
-    fclose (fd);
-
+    fclose(fd);
+    
     for (i = 0; i < 3; i++)
 	if (det->elem[i] != NULL)
 	    delete (det->elem[i]);
@@ -540,14 +522,13 @@ void load_elem (DrawElem * det, char *path)
     fd = fopen (path, "r");
     while (!feof (fd)) {
 	if (fscanf
-	    (fd, "%d %d %d %d", &n, &det->elem[0][nelem],
-	     &det->elem[1][nelem], &det->elem[2][nelem]) == 4)
-	    nelem++;
-	else
-	    fgets (s, 80, fd);
+	    (fd, "%d %d %d %d", &n, &det->elem[0][nelem], &det->elem[1][nelem],
+	     &det->elem[2][i]) == 4)
+        	    nelem++;
     }
     fclose (fd);
-
+    if (nelem==177) g_print("--------------------");
+    
     det->nelem = nelem;
     return;
 }
@@ -557,41 +538,20 @@ void drawelem_load_nds (DrawElem * det, char *path)
     FILE *fd;
     int n, i;
     int nelem;
-    float tmp;
-    char s[80];
 
     fd = fopen (path, "r");
-    nelem = 0;
-    while (!feof (fd)) {
-	if (sdn == 3)
-	    if (fscanf (fd, "%f", &tmp) == 1)
-		nelem++;
-	    else
-		fgets (s, 80, fd);
-	else if (fscanf (fd, "%d %f", &n, &tmp) == 2)
-	    nelem++;
-	else
-	    fgets (s, 80, fd);
-    }
-    fclose (fd);
+    fscanf (fd, "%d", &nelem);
 
     if (det->nds != NULL)
 	delete (det->nds);
 
     det->nds = new float[nelem];
 
-    fd = fopen (path, "r");
-    nelem = 0;
-    while (!feof (fd)) {
+    for (int i = 0; i < nelem; i++) {
 	if (sdn == 3)
-	    if (fscanf (fd, "%f", &det->nds[nelem]) == 1)
-		nelem++;
-	    else
-		fgets (s, 80, fd);
-	else if (fscanf (fd, "%d %f", &n, &det->nds[nelem]) == 2)
-	    nelem++;
+	    fscanf (fd, "%f", &det->nds[i]);
 	else
-	    fgets (s, 80, fd);
+	    fscanf (fd, "%d %f", &n, &det->nds[i]);
     }
     fclose (fd);
     return;
@@ -686,3 +646,4 @@ GtkWidget *drawelem_new (void)
 {
     return GTK_WIDGET (gtk_type_new (drawelem_get_type ()));
 }
+
